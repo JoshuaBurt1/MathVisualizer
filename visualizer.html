@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mersenne Resonance - Serpentine Square</title>
+    <style>
+        body { background: #050505; color: #eee; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        canvas { border: 1px solid #333; background: radial-gradient(circle, #111 0%, #000 100%); }
+        .controls { background: #111; padding: 20px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #333; width: 950px; display: flex; justify-content: space-around; align-items: center; }
+        input { background: #000; color: #ff4444; border: 1px solid #444; padding: 10px; border-radius: 4px; font-size: 1.2em; width: 80px; text-align: center; }
+        button { padding: 10px 20px; cursor: pointer; background: #2ecc71; border: none; color: #000; font-weight: bold; border-radius: 4px; }
+        select { padding: 8px; background: #000; color: #fff; border: 1px solid #444; border-radius: 4px; cursor: pointer; }
+        .stats { color: #2ecc71; font-size: 0.8em; line-height: 1.4; width: 300px; }
+        .legend { font-size: 0.7em; color: #888; margin-top: 5px; }
+        label { font-size: 0.8em; color: #aaa; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: #2ecc71; margin-top: 0;">Mersenne Factor Resonance Map</h1>
+    
+    <div class="controls">
+        <div>
+            <label>p exponent: </label><br>
+            <input type="text" id="pInput" value="23" style="margin-top:5px;">
+            <button onclick="plotResonance()">PLOT DATA</button>
+            <div class="legend">
+                <span style="color:#ff4444">■ Mp (Red)</span> | 
+                <span style="color:#2ecc71">■ Factors (Green)</span>
+            </div>
+        </div>
+
+        <div>
+            <label>Plot Geometry:</label><br>
+            <select id="plotType" onchange="plotResonance()" style="margin-top:5px;">
+                <option value="serpentine">Serpentine Square</option>
+                <option value="ulam">Ulam Spiral (Central)</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Zoom Context:</label><br>
+            <select id="zoomMode" onchange="plotResonance()" style="margin-top:5px;">
+                <option value="Factors">Factor Scale (Detailed View)</option>
+                <option value="Mp">Full Scale (Show Mp Location)</option>
+            </select>
+        </div>
+
+        <div id="statsDisplay" class="stats">Loading JSON data...</div>
+    </div>
+
+    <canvas id="spiralCanvas"></canvas>
+
+<script>
+const visualData = [
+    {"prime_factor": "31", "form": "2^5-1", "is_prime": "true"},
+    {"prime_factor": "127", "form": "2^7-1", "is_prime": "true"},
+    {"prime_factor": "23,89", "form": "2^11-1", "is_prime": "false"},
+    {"prime_factor": "8191", "form": "2^13-1", "is_prime": "true"},
+    {"prime_factor": "131071", "form": "2^17-1", "is_prime": "true"},
+    {"prime_factor": "524287", "form": "2^19-1", "is_prime": "true"},
+    {"prime_factor": "47,178481", "form": "2^23-1", "is_prime": "false"},
+    {"prime_factor": "233,1103,2089", "form": "2^29-1", "is_prime": "false"},
+    {"prime_factor": "2147483647", "form": "2^31-1", "is_prime": "true"},
+    {"prime_factor": "223,616318177", "form": "2^37-1", "is_prime": "false"},
+    {"prime_factor": "13367,164511353", "form": "2^41-1", "is_prime": "false"},
+    {"prime_factor": "431,9719,2099863", "form": "2^43-1", "is_prime": "false"},
+    {"prime_factor": "2351,4513,13264529", "form": "2^47-1", "is_prime": "false"},
+    {"prime_factor": "6361,69431,20394401", "form": "2^53-1", "is_prime": "false"},
+    {"prime_factor": "179951,3203431780337", "form": "2^59-1", "is_prime": "false"},
+    {"prime_factor": "2305843009213693951", "form": "2^61-1", "is_prime": "true"},
+    {"prime_factor": "193707721,761838257287", "form": "2^67-1", "is_prime": "false"},
+    {"prime_factor": "228479,48544121,212885833", "form": "2^71-1", "is_prime": "false"},
+    {"prime_factor": "439,2298041,9361973132609", "form": "2^73-1", "is_prime": "false"},
+    {"prime_factor": "2687,202029703,1113491139767", "form": "2^79-1", "is_prime": "false"},
+    {"prime_factor": "167,57912614113275649087721", "form": "2^83-1", "is_prime": "false"},
+    {"prime_factor": "618970019642690137449562111", "form": "2^89-1", "is_prime": "true"},
+    {"prime_factor": "11447,13842607235828485645766393", "form": "2^97-1", "is_prime": "false"},
+    {"prime_factor": "2550183799,3976656429941438590393", "form": "2^103-1", "is_prime": "false"},
+    {"prime_factor": "3391,23279,65993,1868569,1066818132868207", "form": "2^113-1", "is_prime": "false"},
+    {"prime_factor": "263,10350794431055162386718619237468234569", "form": "2^131-1", "is_prime": "false"},
+    {"prime_factor": "5625767248687,123876132205208335762278423601", "form": "2^139-1", "is_prime": "false"},
+    {"prime_factor": "18121,55871,165799,2332951,7289088383388253664437433", "form": "2^151-1", "is_prime": "false"},
+    {"prime_factor": "852133201,60726444167,1654058017289,2134387368610417", "form": "2^157-1", "is_prime": "false"},
+    {"prime_factor": "150287,704161,110211473,27669118297,36230454570129675721", "form": "2^163-1", "is_prime": "false"},
+    {"prime_factor": "2349023,79638304766856507377778616296087448490695649", "form": "2^167-1", "is_prime": "false"}
+];
+
+function bigIntSqrt(value) {
+    if (value < 2n) return value;
+    let x = value / 2n + 1n;
+    let y = (x + value / x) / 2n;
+    while (y < x) { x = y; y = (x + value / x) / 2n; }
+    return x;
+}
+
+function getSerpentineCoords(n) {
+    let r = bigIntSqrt(n - 1n);
+    let rem = n - (r * r);
+    if (r % 2n === 0n) {
+        if (rem <= r + 1n) return { x: rem - 1n, y: r };
+        else return { x: r, y: r - (rem - (r + 1n)) };
+    } else {
+        if (rem <= r + 1n) return { x: r, y: rem - 1n };
+        else return { x: r - (rem - (r + 1n)), y: r };
+    }
+}
+
+function getSpiralCoordsBigInt(n) {
+    if (n === 0n) return { x: 0n, y: 0n };
+    let k = (bigIntSqrt(n - 1n) + 1n) / 2n;
+    let t = 2n * k + 1n;
+    let m = t * t;
+    t = t - 1n;
+    if (n >= m - t) return { x: k - (m - n), y: k }; 
+    m = m - t;
+    if (n >= m - t) return { x: -k, y: k - (m - n) }; 
+    m = m - t;
+    if (n >= m - t) return { x: -k + (m - n), y: -k }; 
+    return { x: k, y: -k + (m - n - t) };         
+}
+
+function plotResonance() {
+    const canvas = document.getElementById('spiralCanvas');
+    const ctx = canvas.getContext('2d');
+    const pInput = document.getElementById('pInput').value;
+    const zoomMode = document.getElementById('zoomMode').value;
+    const plotType = document.getElementById('plotType').value;
+    
+    canvas.width = 800; canvas.height = 800;
+    const centerX = (plotType === "ulam") ? 400 : 100;
+    const centerY = (plotType === "ulam") ? 400 : 100; 
+
+    const p = BigInt(pInput);
+    const Mp = (2n ** p) - 1n;
+    const entry = visualData.find(d => d.form === `2^${pInput}-1`);
+    let factors = entry ? [...new Set(entry.prime_factor.split(',').map(s => BigInt(s.trim())))] : [];
+
+    let maxN = (zoomMode === "Mp") ? Mp : (factors.length > 0 ? factors.reduce((a, b) => a > b ? a : b) : 100n);
+    
+    let stepSize;
+    if (plotType === "ulam") {
+        let kMax = (bigIntSqrt(maxN - 1n) + 1n) / 2n;
+        stepSize = (canvas.width / 2.5) / Number(kMax);
+    } else {
+        let rootMax = bigIntSqrt(maxN);
+        stepSize = (canvas.width - 200) / Number(rootMax || 1n);
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let getCoords = (plotType === "ulam") ? getSpiralCoordsBigInt : getSerpentineCoords;
+
+    // ORIGIN
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 12px Courier New";
+    ctx.textAlign = "center";
+    ctx.fillText("ORIGIN (0,0)", centerX, centerY - 15);
+    ctx.beginPath(); ctx.arc(centerX, centerY, 4, 0, Math.PI * 2); ctx.fill();
+
+    // BACKGROUND GRID
+    if (stepSize > 15) {
+        ctx.fillStyle = "#333";
+        ctx.textAlign = "center";
+        ctx.font = `${Math.min(stepSize * 0.35, 14)}px Courier New`;
+        let rootLimit = Math.floor(canvas.width / stepSize) + 2;
+        for (let i = 1n; i <= BigInt(rootLimit * rootLimit); i++) {
+            let pos = getCoords(i);
+            let gx = centerX + Number(pos.x) * stepSize;
+            let gy = centerY + Number(pos.y) * stepSize;
+            if (gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) {
+                ctx.fillText(i.toString(), gx, gy);
+            }
+        }
+    }
+
+    // PLOT MARKERS
+    // Note: plotMarker now clips lines to canvas bounds so distant Mp lines are always visible.
+    plotMarker(ctx, Mp, stepSize, centerX, centerY, "#ff4444", "Mp", 10, getCoords, canvas);
+    factors.forEach(f => {
+        plotMarker(ctx, f, stepSize, centerX, centerY, "#2ecc71", f.toString(), 6, getCoords, canvas);
+    });
+
+    document.getElementById('statsDisplay').innerHTML = 
+        `Mode: ${plotType.toUpperCase()}<br>Scale: 1:${stepSize.toFixed(6)}`;
+}
+
+function plotMarker(ctx, n, stepSize, centerX, centerY, color, label, size, coordFn, canvas) {
+    let coords = coordFn(n);
+    let targetX = centerX + Number(coords.x) * stepSize;
+    let targetY = centerY + Number(coords.y) * stepSize;
+
+    // Vector calculation for line clipping
+    let dx = targetX - centerX;
+    let dy = targetY - centerY;
+    
+    // Determine the furthest point to draw the line (clip to canvas edge if offscreen)
+    let drawEndX = targetX;
+    let drawEndY = targetY;
+
+    const margin = 5;
+    if (targetX < 0 || targetX > canvas.width || targetY < 0 || targetY > canvas.height) {
+        let tValues = [];
+        if (dx !== 0) {
+            tValues.push((margin - centerX) / dx);
+            tValues.push((canvas.width - margin - centerX) / dx);
+        }
+        if (dy !== 0) {
+            tValues.push((margin - centerY) / dy);
+            tValues.push((canvas.height - margin - centerY) / dy);
+        }
+        let t = Math.min(...tValues.filter(v => v > 0));
+        drawEndX = centerX + dx * t;
+        drawEndY = centerY + dy * t;
+    }
+
+    // Draw Line
+    ctx.save();
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = color + "88";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(drawEndX, drawEndY);
+    ctx.stroke();
+    ctx.restore();
+
+    // Only draw the actual marker box and label if it's within viewable range
+    if (targetX >= -50 && targetX <= canvas.width + 50 && targetY >= -50 && targetY <= canvas.height + 50) {
+        ctx.save();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.fillRect(targetX - size/2, targetY - size/2, size, size);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px monospace";
+        ctx.textAlign = "left";
+        ctx.fillText(label, targetX + size, targetY + 4);
+        ctx.restore();
+    } else {
+        // If marker is offscreen, add a small indicator text at the clip point
+        ctx.fillStyle = color;
+        ctx.font = "italic 10px Courier New";
+        ctx.fillText("→ " + label, drawEndX, drawEndY > canvas.height - 10 ? drawEndY - 10 : drawEndY + 10);
+    }
+}
+
+plotResonance();
+</script>
+</body>
+</html>
