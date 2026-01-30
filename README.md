@@ -1,3 +1,3 @@
 #MathVisualizer
 
-Visualize number patterns using alternative coordinate systems
+Visualize number using alternative coordinate systems
