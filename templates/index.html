@@ -321,21 +321,46 @@ function drawCommonElements(cfg, coordFn, typeTag) {
         ctx.restore();
     }
 
-    // 2. Marker Plotting Logic
-    // MODIFIED: Only plot the "1" marker if the type is NOT mod12
+    // --- 2. NEW: DRAW DASHED TRACKER LINES ---
     if (typeTag !== "mod12") {
-        plotMarker(cfg, 1n, "#ffffff", "1", 12, coordFn, typeTag); // Origin
+        const drawLine = (targetN, color) => {
+            const startPos = coordFn(1n);
+            const endPos = coordFn(targetN);
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]); // Dashed pattern
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = 0.4;   // Subtle transparency
+            ctx.lineWidth = 2;
+            ctx.moveTo(centerX + Number(startPos.x) * stepSize, centerY + Number(startPos.y) * stepSize);
+            ctx.lineTo(centerX + Number(endPos.x) * stepSize, centerY + Number(endPos.y) * stepSize);
+            ctx.stroke();
+            ctx.restore();
+        };
+
+        // Line to Exponent (Yellow)
+        drawLine(p, "#ffff00");
+
+        // Lines to Factors (Green)
+        factors.forEach(f => drawLine(f, "#00ff88"));
+
+        // Line to Main Number (Red if Prime, Blue if Composite)
+        const mColor = factors.length === 0 ? "#e74c3c" : "#3498db";
+        drawLine(Mnum, mColor);
     }
-    // Exponent (Yellow)
+
+    // 3. Marker Plotting Logic
+    if (typeTag !== "mod12") {
+        plotMarker(cfg, 1n, "#ffffff", "1", 12, coordFn, typeTag);
+    }
+    
     plotMarker(cfg, p, "#ffff00", `p(${p})`, 8, coordFn, typeTag); 
 
     if (factors.length === 0) {
-        // --- PRIME CASE ---
         plotMarker(cfg, Mnum, "#e74c3c", `M# (Prime)`, 10, coordFn, typeTag);
     } else {
-        // --- COMPOSITE CASE ---
         factors.forEach(f => {
-            plotMarker(cfg, f, "#2ecc71", f.toString(), 6, coordFn, typeTag);
+            plotMarker(cfg, f, "#00ff88", f.toString(), 6, coordFn, typeTag);
         });
         plotMarker(cfg, Mnum, "#3498db", `M# (Comp)`, 10, coordFn, typeTag);
     }
@@ -670,12 +695,12 @@ function updateStats(type, p, label, Mnum, factors, entry) {
 
     // Factors: Always Green
     factors.forEach((f, i) => {
-        html += `<div>
-                    <span style="color: #bbb;">Factor:</span> 
-                    <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), ${coordFn.name})">${f}</b><span style="color: #bbb;">,</span> 
-                    ${getGeomData(f, i)}
-                 </div>`;
-    });
+    html += `<div>
+                <span style="color: #bbb;">Factor:</span> 
+                <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), ${coordFn.name})">${f}</b><span style="color: #bbb;">,</span> 
+                ${getGeomData(f, i)}
+             </div>`;
+    })
 
     html += `</div>`;
     statsDiv.innerHTML = html;
