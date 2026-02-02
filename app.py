@@ -5,14 +5,29 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    # Open and read the local JSON file
+    combined_data = []
+    
+    # Load 2^p - 1
     try:
-        with open('mersenne.json', 'r') as f:
-            mersenne_data = json.load(f)
+        with open('2^p-1.json', 'r') as f:
+            minus_data = json.load(f)
+            for entry in minus_data: 
+                entry['type'] = 'minus' # Label as 2^p - 1
+            combined_data.extend(minus_data)
     except FileNotFoundError:
-        mersenne_data = [] # Fallback if file is missing
+        pass
 
-    return render_template('index.html', data=mersenne_data)
+    # Load 2^p + 1
+    try:
+        with open('2^p+1.json', 'r') as f:
+            plus_data = json.load(f)
+            for entry in plus_data: 
+                entry['type'] = 'plus' # Label as 2^p + 1
+            combined_data.extend(plus_data)
+    except FileNotFoundError:
+        pass
+
+    return render_template('index.html', data=combined_data)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

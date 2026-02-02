@@ -1,0 +1,1689 @@
+[
+    {
+        "form": "2^5-1",
+        "number": "31",
+        "factors": "",
+        "serpentineColumn": "6",
+        "serpentineRow": "6",
+        "squareCol": "6",
+        "squareRow": "6",
+        "ulamShell": "4",
+        "hexagonShell": "4",
+        "binaryBitlen": "5",
+        "binaryOffset": "15",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^7-1",
+        "number": "127",
+        "factors": "",
+        "serpentineColumn": "12",
+        "serpentineRow": "6",
+        "squareCol": "12",
+        "squareRow": "6",
+        "ulamShell": "7",
+        "hexagonShell": "7",
+        "binaryBitlen": "7",
+        "binaryOffset": "63",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^11-1",
+        "number": "2047",
+        "factors": "23,89",
+        "serpentineColumn": "46",
+        "serpentineRow": "22",
+        "squareCol": "46",
+        "squareRow": "22",
+        "ulamShell": "24",
+        "hexagonShell": "27",
+        "binaryBitlen": "11",
+        "binaryOffset": "1023",
+        "factorSerpentineColumn": [
+            "5",
+            "10"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "8"
+        ],
+        "factorSquareCol": [
+            "3",
+            "10"
+        ],
+        "factorSquareRow": [
+            "5",
+            "8"
+        ],
+        "factorUlamShell": [
+            "3",
+            "6"
+        ],
+        "factorHexagonShell": [
+            "4",
+            "6"
+        ],
+        "factorBinaryBitlen": [
+            "5",
+            "7"
+        ],
+        "factorBinaryOffset": [
+            "7",
+            "25"
+        ]
+    },
+    {
+        "form": "2^13-1",
+        "number": "8191",
+        "factors": "",
+        "serpentineColumn": "91",
+        "serpentineRow": "91",
+        "squareCol": "91",
+        "squareRow": "91",
+        "ulamShell": "46",
+        "hexagonShell": "53",
+        "binaryBitlen": "13",
+        "binaryOffset": "4095",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^17-1",
+        "number": "131071",
+        "factors": "",
+        "serpentineColumn": "27",
+        "serpentineRow": "363",
+        "squareCol": "363",
+        "squareRow": "27",
+        "ulamShell": "182",
+        "hexagonShell": "210",
+        "binaryBitlen": "17",
+        "binaryOffset": "65535",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^19-1",
+        "number": "524287",
+        "factors": "",
+        "serpentineColumn": "111",
+        "serpentineRow": "725",
+        "squareCol": "725",
+        "squareRow": "111",
+        "ulamShell": "363",
+        "hexagonShell": "419",
+        "binaryBitlen": "19",
+        "binaryOffset": "262143",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^23-1",
+        "number": "8388607",
+        "factors": "47,178481",
+        "serpentineColumn": "1791",
+        "serpentineRow": "2897",
+        "squareCol": "2897",
+        "squareRow": "1791",
+        "ulamShell": "1449",
+        "hexagonShell": "1673",
+        "binaryBitlen": "23",
+        "binaryOffset": "4194303",
+        "factorSerpentineColumn": [
+            "7",
+            "397"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "423"
+        ],
+        "factorSquareCol": [
+            "3",
+            "423"
+        ],
+        "factorSquareRow": [
+            "7",
+            "397"
+        ],
+        "factorUlamShell": [
+            "4",
+            "212"
+        ],
+        "factorHexagonShell": [
+            "5",
+            "245"
+        ],
+        "factorBinaryBitlen": [
+            "6",
+            "18"
+        ],
+        "factorBinaryOffset": [
+            "15",
+            "47409"
+        ]
+    },
+    {
+        "form": "2^29-1",
+        "number": "536870911",
+        "factors": "233,1103,2089",
+        "serpentineColumn": "22011",
+        "serpentineRow": "23171",
+        "squareCol": "23171",
+        "squareRow": "22011",
+        "ulamShell": "11586",
+        "hexagonShell": "13378",
+        "binaryBitlen": "29",
+        "binaryOffset": "268435455",
+        "factorSerpentineColumn": [
+            "16",
+            "34",
+            "28"
+        ],
+        "factorSerpentineRow": [
+            "8",
+            "14",
+            "46"
+        ],
+        "factorSquareCol": [
+            "16",
+            "34",
+            "28"
+        ],
+        "factorSquareRow": [
+            "8",
+            "14",
+            "46"
+        ],
+        "factorUlamShell": [
+            "9",
+            "18",
+            "24"
+        ],
+        "factorHexagonShell": [
+            "10",
+            "20",
+            "27"
+        ],
+        "factorBinaryBitlen": [
+            "8",
+            "11",
+            "12"
+        ],
+        "factorBinaryOffset": [
+            "105",
+            "79",
+            "41"
+        ]
+    },
+    {
+        "form": "2^31-1",
+        "number": "2147483647",
+        "factors": "",
+        "serpentineColumn": "46341",
+        "serpentineRow": "4635",
+        "squareCol": "4635",
+        "squareRow": "46341",
+        "ulamShell": "23171",
+        "hexagonShell": "26756",
+        "binaryBitlen": "31",
+        "binaryOffset": "1073741823",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^37-1",
+        "number": "137438953471",
+        "factors": "223,616318177",
+        "serpentineColumn": "296514",
+        "serpentineRow": "370728",
+        "squareCol": "296514",
+        "squareRow": "370728",
+        "ulamShell": "185365",
+        "hexagonShell": "214041",
+        "binaryBitlen": "37",
+        "binaryOffset": "68719476735",
+        "factorSerpentineColumn": [
+            "15",
+            "12100"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "24826"
+        ],
+        "factorSquareCol": [
+            "3",
+            "12100"
+        ],
+        "factorSquareRow": [
+            "15",
+            "24826"
+        ],
+        "factorUlamShell": [
+            "8",
+            "12414"
+        ],
+        "factorHexagonShell": [
+            "10",
+            "14334"
+        ],
+        "factorBinaryBitlen": [
+            "8",
+            "30"
+        ],
+        "factorBinaryOffset": [
+            "95",
+            "79447265"
+        ]
+    },
+    {
+        "form": "2^41-1",
+        "number": "2199023255551",
+        "factors": "13367,164511353",
+        "serpentineColumn": "1187451",
+        "serpentineRow": "1482911",
+        "squareCol": "1482911",
+        "squareRow": "1187451",
+        "ulamShell": "741456",
+        "hexagonShell": "856160",
+        "binaryBitlen": "41",
+        "binaryOffset": "1099511627775",
+        "factorSerpentineColumn": [
+            "90",
+            "5077"
+        ],
+        "factorSerpentineRow": [
+            "116",
+            "12827"
+        ],
+        "factorSquareCol": [
+            "90",
+            "12827"
+        ],
+        "factorSquareRow": [
+            "116",
+            "5077"
+        ],
+        "factorUlamShell": [
+            "59",
+            "6414"
+        ],
+        "factorHexagonShell": [
+            "68",
+            "7406"
+        ],
+        "factorBinaryBitlen": [
+            "14",
+            "28"
+        ],
+        "factorBinaryOffset": [
+            "5175",
+            "30293625"
+        ]
+    },
+    {
+        "form": "2^43-1",
+        "number": "8796093022207",
+        "factors": "431,9719,2099863",
+        "serpentineColumn": "2965821",
+        "serpentineRow": "1181835",
+        "squareCol": "1181835",
+        "squareRow": "2965821",
+        "ulamShell": "1482911",
+        "hexagonShell": "1712318",
+        "binaryBitlen": "43",
+        "binaryOffset": "4398046511103",
+        "factorSerpentineColumn": [
+            "21",
+            "99",
+            "1450"
+        ],
+        "factorSerpentineRow": [
+            "11",
+            "83",
+            "262"
+        ],
+        "factorSquareCol": [
+            "11",
+            "83",
+            "1450"
+        ],
+        "factorSquareRow": [
+            "21",
+            "99",
+            "262"
+        ],
+        "factorUlamShell": [
+            "11",
+            "50",
+            "726"
+        ],
+        "factorHexagonShell": [
+            "13",
+            "58",
+            "838"
+        ],
+        "factorBinaryBitlen": [
+            "9",
+            "14",
+            "22"
+        ],
+        "factorBinaryOffset": [
+            "175",
+            "1527",
+            "2711"
+        ]
+    },
+    {
+        "form": "2^47-1",
+        "number": "140737488355327",
+        "factors": "2351,4513,13264529",
+        "serpentineColumn": "11863284",
+        "serpentineRow": "4817238",
+        "squareCol": "11863284",
+        "squareRow": "4817238",
+        "ulamShell": "5931643",
+        "hexagonShell": "6849271",
+        "binaryBitlen": "47",
+        "binaryOffset": "70368744177663",
+        "factorSerpentineColumn": [
+            "47",
+            "68",
+            "365"
+        ],
+        "factorSerpentineRow": [
+            "49",
+            "24",
+            "3643"
+        ],
+        "factorSquareCol": [
+            "49",
+            "68",
+            "3643"
+        ],
+        "factorSquareRow": [
+            "47",
+            "24",
+            "365"
+        ],
+        "factorUlamShell": [
+            "25",
+            "35",
+            "1822"
+        ],
+        "factorHexagonShell": [
+            "29",
+            "40",
+            "2104"
+        ],
+        "factorBinaryBitlen": [
+            "12",
+            "13",
+            "24"
+        ],
+        "factorBinaryOffset": [
+            "303",
+            "417",
+            "4875921"
+        ]
+    },
+    {
+        "form": "2^53-1",
+        "number": "9007199254740991",
+        "factors": "6361,69431,20394401",
+        "serpentineColumn": "71321766",
+        "serpentineRow": "94906266",
+        "squareCol": "71321766",
+        "squareRow": "94906266",
+        "ulamShell": "47453134",
+        "hexagonShell": "54794159",
+        "binaryBitlen": "53",
+        "binaryOffset": "4503599627370495",
+        "factorSerpentineColumn": [
+            "40",
+            "264",
+            "145"
+        ],
+        "factorSerpentineRow": [
+            "80",
+            "262",
+            "4517"
+        ],
+        "factorSquareCol": [
+            "40",
+            "264",
+            "4517"
+        ],
+        "factorSquareRow": [
+            "80",
+            "262",
+            "145"
+        ],
+        "factorUlamShell": [
+            "41",
+            "133",
+            "2259"
+        ],
+        "factorHexagonShell": [
+            "47",
+            "153",
+            "2608"
+        ],
+        "factorBinaryBitlen": [
+            "13",
+            "17",
+            "25"
+        ],
+        "factorBinaryOffset": [
+            "2265",
+            "3895",
+            "3617185"
+        ]
+    },
+    {
+        "form": "2^59-1",
+        "number": "576460752303423487",
+        "factors": "179951,3203431780337",
+        "serpentineColumn": "759250125",
+        "serpentineRow": "9092139",
+        "squareCol": "9092139",
+        "squareRow": "759250125",
+        "ulamShell": "379625063",
+        "hexagonShell": "438353265",
+        "binaryBitlen": "59",
+        "binaryOffset": "288230376151711743",
+        "factorSerpentineColumn": [
+            "175",
+            "1789814"
+        ],
+        "factorSerpentineRow": [
+            "425",
+            "1205368"
+        ],
+        "factorSquareCol": [
+            "425",
+            "1789814"
+        ],
+        "factorSquareRow": [
+            "175",
+            "1205368"
+        ],
+        "factorUlamShell": [
+            "213",
+            "894908"
+        ],
+        "factorHexagonShell": [
+            "246",
+            "1033350"
+        ],
+        "factorBinaryBitlen": [
+            "18",
+            "42"
+        ],
+        "factorBinaryOffset": [
+            "48879",
+            "1004408524785"
+        ]
+    },
+    {
+        "form": "2^61-1",
+        "number": "2305843009213693951",
+        "factors": "",
+        "serpentineColumn": "36368550",
+        "serpentineRow": "1518500250",
+        "squareCol": "36368550",
+        "squareRow": "1518500250",
+        "ulamShell": "759250126",
+        "hexagonShell": "876706529",
+        "binaryBitlen": "61",
+        "binaryOffset": "1152921504606846975",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^67-1",
+        "number": "147573952589676412927",
+        "factors": "193707721,761838257287",
+        "serpentineColumn": "2327587074",
+        "serpentineRow": "12148002000",
+        "squareCol": "2327587074",
+        "squareRow": "12148002000",
+        "ulamShell": "6074001001",
+        "hexagonShell": "7013652226",
+        "binaryBitlen": "67",
+        "binaryOffset": "73786976294838206463",
+        "factorSerpentineColumn": [
+            "3004",
+            "872834"
+        ],
+        "factorSerpentineRow": [
+            "13918",
+            "811398"
+        ],
+        "factorSquareCol": [
+            "3004",
+            "872834"
+        ],
+        "factorSquareRow": [
+            "13918",
+            "811398"
+        ],
+        "factorUlamShell": [
+            "6960",
+            "436418"
+        ],
+        "factorHexagonShell": [
+            "8036",
+            "503932"
+        ],
+        "factorBinaryBitlen": [
+            "28",
+            "40"
+        ],
+        "factorBinaryOffset": [
+            "59489993",
+            "212082443399"
+        ]
+    },
+    {
+        "form": "2^71-1",
+        "number": "2361183241434822606847",
+        "factors": "228479,48544121,212885833",
+        "serpentineColumn": "37241393154",
+        "serpentineRow": "48592008000",
+        "squareCol": "37241393154",
+        "squareRow": "48592008000",
+        "ulamShell": "24296004001",
+        "hexagonShell": "28054608900",
+        "binaryBitlen": "71",
+        "binaryOffset": "1180591620717411303423",
+        "factorSerpentineColumn": [
+            "6",
+            "6968",
+            "14591"
+        ],
+        "factorSerpentineRow": [
+            "478",
+            "5032",
+            "11449"
+        ],
+        "factorSquareCol": [
+            "6",
+            "6968",
+            "11449"
+        ],
+        "factorSquareRow": [
+            "478",
+            "5032",
+            "14591"
+        ],
+        "factorUlamShell": [
+            "240",
+            "3485",
+            "7296"
+        ],
+        "factorHexagonShell": [
+            "277",
+            "4024",
+            "8425"
+        ],
+        "factorBinaryBitlen": [
+            "18",
+            "26",
+            "28"
+        ],
+        "factorBinaryOffset": [
+            "97407",
+            "14989689",
+            "78668105"
+        ]
+    },
+    {
+        "form": "2^73-1",
+        "number": "9444732965739290427391",
+        "factors": "439,2298041,9361973132609",
+        "serpentineColumn": "97184016000",
+        "serpentineRow": "45402459390",
+        "squareCol": "97184016000",
+        "squareRow": "45402459390",
+        "ulamShell": "48592008001",
+        "hexagonShell": "56109217799",
+        "binaryBitlen": "73",
+        "binaryOffset": "4722366482869645213695",
+        "factorSerpentineColumn": [
+            "21",
+            "216",
+            "981853"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "1516",
+            "3059735"
+        ],
+        "factorSquareCol": [
+            "3",
+            "216",
+            "3059735"
+        ],
+        "factorSquareRow": [
+            "21",
+            "1516",
+            "981853"
+        ],
+        "factorUlamShell": [
+            "11",
+            "759",
+            "1529868"
+        ],
+        "factorHexagonShell": [
+            "13",
+            "876",
+            "1766539"
+        ],
+        "factorBinaryBitlen": [
+            "9",
+            "22",
+            "44"
+        ],
+        "factorBinaryOffset": [
+            "183",
+            "200889",
+            "565880110401"
+        ]
+    },
+    {
+        "form": "2^79-1",
+        "number": "604462909807314587353087",
+        "factors": "2687,202029703,1113491139767",
+        "serpentineColumn": "204131110950",
+        "serpentineRow": "777472127994",
+        "squareCol": "204131110950",
+        "squareRow": "777472127994",
+        "ulamShell": "388736063998",
+        "hexagonShell": "448873742386",
+        "binaryBitlen": "79",
+        "binaryOffset": "302231454903657293676543",
+        "factorSerpentineColumn": [
+            "18",
+            "8094",
+            "1055221"
+        ],
+        "factorSerpentineRow": [
+            "52",
+            "14214",
+            "219075"
+        ],
+        "factorSquareCol": [
+            "18",
+            "8094",
+            "219075"
+        ],
+        "factorSquareRow": [
+            "52",
+            "14214",
+            "1055221"
+        ],
+        "factorUlamShell": [
+            "27",
+            "7108",
+            "527611"
+        ],
+        "factorHexagonShell": [
+            "31",
+            "8207",
+            "609233"
+        ],
+        "factorBinaryBitlen": [
+            "12",
+            "28",
+            "41"
+        ],
+        "factorBinaryOffset": [
+            "639",
+            "67811975",
+            "13979511991"
+        ]
+    },
+    {
+        "form": "2^83-1",
+        "number": "9671406556917033397649407",
+        "factors": "167,57912614113275649087721",
+        "serpentineColumn": "3109888511976",
+        "serpentineRow": "2953679248782",
+        "squareCol": "3109888511976",
+        "squareRow": "2953679248782",
+        "ulamShell": "1554944255989",
+        "hexagonShell": "1795494969540",
+        "binaryBitlen": "83",
+        "binaryOffset": "4835703278458516698824703",
+        "factorSerpentineColumn": [
+            "13",
+            "113647261736"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "240650398116"
+        ],
+        "factorSquareCol": [
+            "3",
+            "113647261736"
+        ],
+        "factorSquareRow": [
+            "13",
+            "240650398116"
+        ],
+        "factorUlamShell": [
+            "7",
+            "120325199059"
+        ],
+        "factorHexagonShell": [
+            "8",
+            "138939572134"
+        ],
+        "factorBinaryBitlen": [
+            "8",
+            "76"
+        ],
+        "factorBinaryOffset": [
+            "39",
+            "20133682250318487378153"
+        ]
+    },
+    {
+        "form": "2^89-1",
+        "number": "618970019642690137449562111",
+        "factors": "",
+        "serpentineColumn": "9997392844306",
+        "serpentineRow": "24879108095804",
+        "squareCol": "9997392844306",
+        "squareRow": "24879108095804",
+        "ulamShell": "12439554047903",
+        "hexagonShell": "14363959756311",
+        "binaryBitlen": "89",
+        "binaryOffset": "309485009821345068724781055",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^97-1",
+        "number": "158456325028528675187087900671",
+        "factors": "11447,13842607235828485645766393",
+        "serpentineColumn": "398065729532861",
+        "serpentineRow": "170938190944651",
+        "squareCol": "170938190944651",
+        "squareRow": "398065729532861",
+        "ulamShell": "199032864766431",
+        "hexagonShell": "229823356100963",
+        "binaryBitlen": "97",
+        "binaryOffset": "79228162514264337593543950335",
+        "factorSerpentineColumn": [
+            "107",
+            "2352426579449"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "3720565445713"
+        ],
+        "factorSquareCol": [
+            "3",
+            "3720565445713"
+        ],
+        "factorSquareRow": [
+            "107",
+            "2352426579449"
+        ],
+        "factorUlamShell": [
+            "54",
+            "1860282722857"
+        ],
+        "factorHexagonShell": [
+            "63",
+            "2148069461621"
+        ],
+        "factorBinaryBitlen": [
+            "14",
+            "84"
+        ],
+        "factorBinaryOffset": [
+            "3255",
+            "4171200678911452248116985"
+        ]
+    },
+    {
+        "form": "2^103-1",
+        "number": "10141204801825835211973625643007",
+        "factors": "2550183799,3976656429941438590393",
+        "serpentineColumn": "1798059124594011",
+        "serpentineRow": "3184525836262887",
+        "squareCol": "3184525836262887",
+        "squareRow": "1798059124594011",
+        "ulamShell": "1592262918131444",
+        "hexagonShell": "1838586848807696",
+        "binaryBitlen": "103",
+        "binaryOffset": "5070602400912917605986812821503",
+        "factorSerpentineColumn": [
+            "50500",
+            "34883708793"
+        ],
+        "factorSerpentineRow": [
+            "34798",
+            "63060736041"
+        ],
+        "factorSquareCol": [
+            "50500",
+            "63060736041"
+        ],
+        "factorSquareRow": [
+            "34798",
+            "34883708793"
+        ],
+        "factorUlamShell": [
+            "25251",
+            "31530368021"
+        ],
+        "factorHexagonShell": [
+            "29157",
+            "36408132929"
+        ],
+        "factorBinaryBitlen": [
+            "32",
+            "72"
+        ],
+        "factorBinaryOffset": [
+            "402700151",
+            "1615473188506615983545"
+        ]
+    },
+    {
+        "form": "2^113-1",
+        "number": "10384593717069655257060992658440191",
+        "factors": "3391,23279,65993,1868569,1066818132868207",
+        "serpentineColumn": "101904826760412362",
+        "serpentineRow": "6925661896845870",
+        "squareCol": "101904826760412362",
+        "squareRow": "6925661896845870",
+        "ulamShell": "50952413380206182",
+        "hexagonShell": "58834779161846248",
+        "binaryBitlen": "113",
+        "binaryOffset": "5192296858534827628530496329220095",
+        "factorSerpentineColumn": [
+            "27",
+            "153",
+            "257",
+            "1367",
+            "132918"
+        ],
+        "factorSerpentineRow": [
+            "59",
+            "131",
+            "57",
+            "121",
+            "32662182"
+        ],
+        "factorSquareCol": [
+            "59",
+            "131",
+            "57",
+            "121",
+            "132918"
+        ],
+        "factorSquareRow": [
+            "27",
+            "153",
+            "257",
+            "1367",
+            "32662182"
+        ],
+        "factorUlamShell": [
+            "30",
+            "77",
+            "129",
+            "684",
+            "16331092"
+        ],
+        "factorHexagonShell": [
+            "35",
+            "89",
+            "149",
+            "790",
+            "18857521"
+        ],
+        "factorBinaryBitlen": [
+            "12",
+            "15",
+            "17",
+            "21",
+            "50"
+        ],
+        "factorBinaryOffset": [
+            "1343",
+            "6895",
+            "457",
+            "819993",
+            "503868179446895"
+        ]
+    },
+    {
+        "form": "2^127-1",
+        "number": "170141183460469231731687303715884105727",
+        "factors": "",
+        "serpentineColumn": "9119501915260492783",
+        "serpentineRow": "13043817825332782213",
+        "squareCol": "13043817825332782213",
+        "squareRow": "9119501915260492783",
+        "ulamShell": "6521908912666391107",
+        "hexagonShell": "7530851732716319744",
+        "binaryBitlen": "127",
+        "binaryOffset": "85070591730234615865843651857942052863",
+        "factorSerpentineColumn": [],
+        "factorSerpentineRow": [],
+        "factorSquareCol": [],
+        "factorSquareRow": [],
+        "factorUlamShell": [],
+        "factorHexagonShell": [],
+        "factorBinaryBitlen": [],
+        "factorBinaryOffset": []
+    },
+    {
+        "form": "2^131-1",
+        "number": "2722258935367507707706996859454145691647",
+        "factors": "263,10350794431055162386718619237468234569",
+        "serpentineColumn": "52175271301331128850",
+        "serpentineRow": "41561488041505626846",
+        "squareCol": "52175271301331128850",
+        "squareRow": "41561488041505626846",
+        "ulamShell": "26087635650665564426",
+        "hexagonShell": "30123406930865278976",
+        "binaryBitlen": "131",
+        "binaryOffset": "1361129467683753853853498429727072845823",
+        "factorSerpentineColumn": [
+            "7",
+            "174841282271632069"
+        ],
+        "factorSerpentineRow": [
+            "17",
+            "3217265054523043551"
+        ],
+        "factorSquareCol": [
+            "17",
+            "3217265054523043551"
+        ],
+        "factorSquareRow": [
+            "7",
+            "174841282271632069"
+        ],
+        "factorUlamShell": [
+            "9",
+            "1608632527261521776"
+        ],
+        "factorHexagonShell": [
+            "10",
+            "1857488845283255296"
+        ],
+        "factorBinaryBitlen": [
+            "9",
+            "123"
+        ],
+        "factorBinaryOffset": [
+            "7",
+            "5033882447915498895103390996346856265"
+        ]
+    },
+    {
+        "form": "2^137-1",
+        "number": "174224571863520493293247799005065324265471",
+        "factors": "32032215596496435569,5439042183600204290159",
+        "method": "Pollard factorial",
+        "serpentineColumn": "417402170410649030796",
+        "serpentineRow": "155522212192465933446",
+        "squareCol": "417402170410649030796",
+        "squareRow": "155522212192465933446",
+        "ulamShell": "208701085205324515399",
+        "hexagonShell": "240987255446922231808",
+        "binaryBitlen": "137",
+        "binaryOffset": "87112285931760246646623899502532662132735",
+        "factorSerpentineColumn": [
+            "5659701017",
+            "63767466486"
+        ],
+        "factorSerpentineRow": [
+            "5334398721",
+            "73749862262"
+        ],
+        "factorSquareCol": [
+            "5334398721",
+            "63767466486"
+        ],
+        "factorSquareRow": [
+            "5659701017",
+            "73749862262"
+        ],
+        "factorUlamShell": [
+            "2829850509",
+            "36874931132"
+        ],
+        "factorHexagonShell": [
+            "3267629906",
+            "42579502830"
+        ],
+        "factorBinaryBitlen": [
+            "65",
+            "73"
+        ],
+        "factorBinaryOffset": [
+            "13585471522786883953",
+            "716675700730559076463"
+        ]
+    },
+    {
+        "form": "2^139-1",
+        "number": "696898287454081973172991196020261297061887",
+        "factors": "5625767248687,123876132205208335762278423601",
+        "serpentineColumn": "622088848769863733787",
+        "serpentineRow": "834804340821298061591",
+        "squareCol": "834804340821298061591",
+        "squareRow": "622088848769863733787",
+        "ulamShell": "417402170410649030796",
+        "hexagonShell": "481974510893844463616",
+        "binaryBitlen": "139",
+        "binaryOffset": "348449143727040986586495598010130648530943",
+        "factorSerpentineColumn": [
+            "48214",
+            "313215926238001"
+        ],
+        "factorSerpentineRow": [
+            "2371870",
+            "351960412838161"
+        ],
+        "factorSquareCol": [
+            "48214",
+            "351960412838161"
+        ],
+        "factorSquareRow": [
+            "2371870",
+            "313215926238001"
+        ],
+        "factorUlamShell": [
+            "1185936",
+            "175980206419081"
+        ],
+        "factorHexagonShell": [
+            "1369401",
+            "203204439096205"
+        ],
+        "factorBinaryBitlen": [
+            "43",
+            "97"
+        ],
+        "factorBinaryOffset": [
+            "1227720737583",
+            "44647969690943998168734473265"
+        ]
+    },
+    {
+        "form": "2^151-1",
+        "number": "2854495385411919762116571938898990272765493247",
+        "factors": "18121,55871,165799,2332951,7289088383388253664437433",
+        "serpentineColumn": "16443010441665791609410",
+        "serpentineRow": "53427477812563075941784",
+        "squareCol": "16443010441665791609410",
+        "squareRow": "53427477812563075941784",
+        "ulamShell": "26713738906281537970893",
+        "hexagonShell": "30846368697206045671424",
+        "binaryBitlen": "151",
+        "binaryOffset": "1427247692705959881058285969449495136382746623",
+        "factorSerpentineColumn": [
+            "135",
+            "175",
+            "408",
+            "1528",
+            "2699831176831"
+        ],
+        "factorSerpentineRow": [
+            "105",
+            "237",
+            "150",
+            "1222",
+            "408726765129"
+        ],
+        "factorSquareCol": [
+            "105",
+            "237",
+            "408",
+            "1528",
+            "408726765129"
+        ],
+        "factorSquareRow": [
+            "135",
+            "175",
+            "150",
+            "1222",
+            "2699831176831"
+        ],
+        "factorUlamShell": [
+            "68",
+            "119",
+            "205",
+            "765",
+            "1349915588416"
+        ],
+        "factorHexagonShell": [
+            "79",
+            "137",
+            "236",
+            "883",
+            "1558748256711"
+        ],
+        "factorBinaryBitlen": [
+            "15",
+            "16",
+            "18",
+            "22",
+            "83"
+        ],
+        "factorBinaryOffset": [
+            "1737",
+            "23103",
+            "34727",
+            "235799",
+            "2453385104929736965612729"
+        ]
+    },
+    {
+        "form": "2^157-1",
+        "number": "182687704666362864775460604089535377456991567871",
+        "factors": "852133201,60726444167,1654058017289,2134387368610417",
+        "serpentineColumn": "427419822500504607534271",
+        "serpentineRow": "197513023265601447933571",
+        "squareCol": "197513023265601447933571",
+        "squareRow": "427419822500504607534271",
+        "ulamShell": "213709911250252303767136",
+        "hexagonShell": "246770949577648365371392",
+        "binaryBitlen": "157",
+        "binaryOffset": "91343852333181432387730302044767688728495783935",
+        "factorSerpentineColumn": [
+            "29192",
+            "246428",
+            "337116",
+            "36285517"
+        ],
+        "factorSerpentineRow": [
+            "18720",
+            "177838",
+            "1286102",
+            "46199431"
+        ],
+        "factorSquareCol": [
+            "29192",
+            "246428",
+            "337116",
+            "46199431"
+        ],
+        "factorSquareRow": [
+            "18720",
+            "177838",
+            "1286102",
+            "36285517"
+        ],
+        "factorUlamShell": [
+            "14597",
+            "123215",
+            "643052",
+            "23099716"
+        ],
+        "factorHexagonShell": [
+            "16855",
+            "142276",
+            "742532",
+            "26673255"
+        ],
+        "factorBinaryBitlen": [
+            "30",
+            "36",
+            "41",
+            "51"
+        ],
+        "factorBinaryOffset": [
+            "315262289",
+            "26366705799",
+            "554546389513",
+            "1008487461767793"
+        ]
+    },
+    {
+        "form": "2^163-1",
+        "number": "11692013098647223345629478661730264157247460343807",
+        "factors": "150287,704161,110211473,27669118297,36230454570129675721",
+        "serpentineColumn": "1036600831017654773348251",
+        "serpentineRow": "3419358580004036860274167",
+        "squareCol": "3419358580004036860274167",
+        "squareRow": "1036600831017654773348251",
+        "ulamShell": "1709679290002018430137084",
+        "hexagonShell": "1974167596621186922971136",
+        "binaryBitlen": "163",
+        "binaryOffset": "5846006549323611672814739330865132078623730171903",
+        "factorSerpentineColumn": [
+            "258",
+            "840",
+            "3469",
+            "122697",
+            "6019173911"
+        ],
+        "factorSerpentineRow": [
+            "388",
+            "240",
+            "10499",
+            "166341",
+            "733360201"
+        ],
+        "factorSquareCol": [
+            "258",
+            "840",
+            "10499",
+            "166341",
+            "733360201"
+        ],
+        "factorSquareRow": [
+            "388",
+            "240",
+            "3469",
+            "122697",
+            "6019173911"
+        ],
+        "factorUlamShell": [
+            "195",
+            "421",
+            "5250",
+            "83171",
+            "3009586956"
+        ],
+        "factorHexagonShell": [
+            "225",
+            "485",
+            "6062",
+            "96038",
+            "3475171679"
+        ],
+        "factorBinaryBitlen": [
+            "18",
+            "20",
+            "27",
+            "35",
+            "65"
+        ],
+        "factorBinaryOffset": [
+            "19215",
+            "179873",
+            "43102609",
+            "10489249113",
+            "17783710496420124105"
+        ]
+    },
+    {
+        "form": "2^167-1",
+        "number": "187072209578355573530071658587684226515959365500927",
+        "factors": "2349023,79638304766856507377778616296087448490695649",
+        "serpentineColumn": "13677434320016147441096665",
+        "serpentineRow": "10769255343749818508621299",
+        "squareCol": "10769255343749818508621299",
+        "squareRow": "13677434320016147441096665",
+        "ulamShell": "6838717160008073720548333",
+        "hexagonShell": "7896670386484747691884544",
+        "binaryBitlen": "167",
+        "binaryOffset": "93536104789177786765035829293842113257979682750463",
+        "factorSerpentineColumn": [
+            "1533",
+            "1712736486106388054653"
+        ],
+        "factorSerpentineRow": [
+            "1067",
+            "8924029626063357448887"
+        ],
+        "factorSquareCol": [
+            "1067",
+            "8924029626063357448887"
+        ],
+        "factorSquareRow": [
+            "1533",
+            "1712736486106388054653"
+        ],
+        "factorUlamShell": [
+            "767",
+            "4462014813031678724444"
+        ],
+        "factorHexagonShell": [
+            "886",
+            "5152290906863874080768"
+        ],
+        "factorBinaryBitlen": [
+            "22",
+            "146"
+        ],
+        "factorBinaryOffset": [
+            "251871",
+            "35036814369795261094707179750790725478734817"
+        ]
+    },
+    {
+        "form": "2^179-1",
+        "number": "766247770432944429179173513575154591809369561091801087",
+        "factors": "359,1433,1489459109360039866456940197095433721664951999121",
+        "serpentineColumn": "875355796481033436230186535",
+        "serpentineRow": "343080063947584799803505139",
+        "squareCol": "343080063947584799803505139",
+        "squareRow": "875355796481033436230186535",
+        "ulamShell": "437677898240516718115093268",
+        "hexagonShell": "505386904735023852280610816",
+        "binaryBitlen": "179",
+        "binaryOffset": "383123885216472214589586756787577295904684780545900543",
+        "factorSerpentineColumn": [
+            "19",
+            "12",
+            "753183286228718024810605"
+        ],
+        "factorSerpentineRow": [
+            "3",
+            "38",
+            "1220433984023732381765755"
+        ],
+        "factorSquareCol": [
+            "3",
+            "12",
+            "1220433984023732381765755"
+        ],
+        "factorSquareRow": [
+            "19",
+            "38",
+            "753183286228718024810605"
+        ],
+        "factorUlamShell": [
+            "10",
+            "20",
+            "610216992011866190882878"
+        ],
+        "factorHexagonShell": [
+            "12",
+            "23",
+            "704617889204269360349184"
+        ],
+        "factorBinaryBitlen": [
+            "9",
+            "11",
+            "161"
+        ],
+        "factorBinaryOffset": [
+            "103",
+            "409",
+            "27957472029136948253255364379150702009019456145"
+        ]
+    },
+    {
+        "form": "2^181-1",
+        "number": "3064991081731777716716694054300618367237478244367204351",
+        "factors": "43441,1164193,7648337,7923871097285295625344647665764672671",
+        "serpentineColumn": "1372320255790339199214020550",
+        "serpentineRow": "1750711592962066872460373070",
+        "squareCol": "1372320255790339199214020550",
+        "squareRow": "1750711592962066872460373070",
+        "ulamShell": "875355796481033436230186536",
+        "hexagonShell": "1010773809470047704561221632",
+        "binaryBitlen": "181",
+        "binaryOffset": "1532495540865888858358347027150309183618739122183602175",
+        "factorSerpentineColumn": [
+            "177",
+            "1079",
+            "2420",
+            "40841831225938747"
+        ],
+        "factorSerpentineRow": [
+            "209",
+            "49",
+            "2766",
+            "2814937139135667383"
+        ],
+        "factorSquareCol": [
+            "209",
+            "49",
+            "2420",
+            "2814937139135667383"
+        ],
+        "factorSquareRow": [
+            "177",
+            "1079",
+            "2766",
+            "40841831225938747"
+        ],
+        "factorUlamShell": [
+            "105",
+            "540",
+            "1384",
+            "1407468569567833692"
+        ],
+        "factorHexagonShell": [
+            "121",
+            "624",
+            "1598",
+            "1625204715031852800"
+        ],
+        "factorBinaryBitlen": [
+            "16",
+            "21",
+            "23",
+            "123"
+        ],
+        "factorBinaryOffset": [
+            "10673",
+            "115617",
+            "3454033",
+            "2606959114145632133729419424643294367"
+        ]
+    },
+    {
+        "form": "2^191-1",
+        "number": "3138550867693340381917894711603833208051177722232017256447",
+        "factors": "383,7068569257,39940132241,332584516519201,87274497124602996457",
+        "serpentineColumn": "56022770974786139918731938228",
+        "serpentineRow": "51336103415132297891873352918",
+        "squareCol": "56022770974786139918731938228",
+        "squareRow": "51336103415132297891873352918",
+        "ulamShell": "28011385487393069959365969115",
+        "hexagonShell": "32344761903041526545959092224",
+        "binaryBitlen": "191",
+        "binaryOffset": "1569275433846670190958947355801916604025588861116008628223",
+        "factorSerpentineColumn": [
+            "18",
+            "84075",
+            "109741",
+            "5090800",
+            "9342082056"
+        ],
+        "factorSerpentineRow": [
+            "20",
+            "36369",
+            "199851",
+            "18236900",
+            "2249973432"
+        ],
+        "factorSquareCol": [
+            "18",
+            "36369",
+            "199851",
+            "5090800",
+            "9342082056"
+        ],
+        "factorSquareRow": [
+            "20",
+            "84075",
+            "109741",
+            "18236900",
+            "2249973432"
+        ],
+        "factorUlamShell": [
+            "11",
+            "42038",
+            "99926",
+            "9118451",
+            "4671041029"
+        ],
+        "factorHexagonShell": [
+            "12",
+            "48542",
+            "115385",
+            "10529080",
+            "5393653590"
+        ],
+        "factorBinaryBitlen": [
+            "9",
+            "33",
+            "36",
+            "49",
+            "67"
+        ],
+        "factorBinaryOffset": [
+            "127",
+            "2773601961",
+            "5580393873",
+            "51109539808545",
+            "13487520829764789993"
+        ]
+    },
+    {
+        "form": "2^197-1",
+        "number": "200867255532373784442745261542645325315275374222849104412671",
+        "factors": "7487,26828803997912886929710867041891989490486893845712448833",
+        "serpentineColumn": "299946723817845889718949459730",
+        "serpentineRow": "448182167798289119349855505820",
+        "squareCol": "299946723817845889718949459730",
+        "squareRow": "448182167798289119349855505820",
+        "ulamShell": "224091083899144559674927752911",
+        "hexagonShell": "258758095224332212367672737792",
+        "binaryBitlen": "197",
+        "binaryOffset": "100433627766186892221372630771322662657637687111424552206335",
+        "factorSerpentineColumn": [
+            "87",
+            "735107489146119161418002557"
+        ],
+        "factorSerpentineRow": [
+            "83",
+            "5179652883921169377120045327"
+        ],
+        "factorSquareCol": [
+            "83",
+            "5179652883921169377120045327"
+        ],
+        "factorSquareRow": [
+            "87",
+            "735107489146119161418002557"
+        ],
+        "factorUlamShell": [
+            "44",
+            "2589826441960584688560022664"
+        ],
+        "factorHexagonShell": [
+            "51",
+            "2990473986840708608834928640"
+        ],
+        "factorBinaryBitlen": [
+            "13",
+            "185"
+        ],
+        "factorBinaryOffset": [
+            "3391",
+            "2308875344058665195977314607487042552587067890774814017"
+        ]
+    },
+    {
+        "form": "2^199-1",
+        "number": "803469022129495137770981046170581301261101496891396417650687",
+        "factors": "164504919713,4884164093883941177660049098586324302977543600799",
+        "serpentineColumn": "896364335596578238699711011640",
+        "serpentineRow": "592941775921772918523624184366",
+        "squareCol": "896364335596578238699711011640",
+        "squareRow": "592941775921772918523624184366",
+        "ulamShell": "448182167798289119349855505821",
+        "hexagonShell": "517516190448664424735345475584",
+        "binaryBitlen": "199",
+        "binaryOffset": "401734511064747568885490523085290650630550748445698208825343",
+        "factorSerpentineColumn": [
+            "49249",
+            "2210014500831146396770077"
+        ],
+        "factorSerpentineRow": [
+            "405593",
+            "1906510557960000458985131"
+        ],
+        "factorSquareCol": [
+            "405593",
+            "1906510557960000458985131"
+        ],
+        "factorSquareRow": [
+            "49249",
+            "2210014500831146396770077"
+        ],
+        "factorUlamShell": [
+            "202797",
+            "1105007250415573198385039"
+        ],
+        "factorHexagonShell": [
+            "234170",
+            "1275952466967838867849216"
+        ],
+        "factorBinaryBitlen": [
+            "38",
+            "162"
+        ],
+        "factorBinaryOffset": [
+            "27065966241",
+            "1961160819222135341252679433153758263665678514847"
+        ]
+    }
+]

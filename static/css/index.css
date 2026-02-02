@@ -1,0 +1,140 @@
+/* 1. Reset and Full Screen Setup */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Removes scrollbars for the draggable canvas */
+    background: #050505;
+    font-family: 'Courier New', monospace;
+    color: #eee;
+}
+
+/* 2. The Draggable Canvas */
+canvas { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    cursor: grab; /* Visual hint for dragging */
+    z-index: 1;
+}
+
+canvas:active {
+    cursor: grabbing; /* Visual hint while dragging */
+}
+
+/* 3. Floating Title */
+h1 { 
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    margin: 0;
+    letter-spacing: 2px;
+    color: #2ecc71;
+    text-transform: uppercase;
+    font-size: 1.4rem;
+    pointer-events: none; /* Allows you to click through the title */
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+}
+
+/* 4. Floating Controls Panel (Right Sidebar) */
+.controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column; /* Vertical sidebar */
+    gap: 20px;
+    background: rgba(17, 17, 17, 0.85); /* Semi-transparent glass effect */
+    backdrop-filter: blur(8px); /* Blur effect for modern UI */
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 320px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* 5. Floating Stats Panel (Bottom-Left) */
+.stats {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 10;
+    width: calc(100% - 380px); /* Leave room for sidebar */
+    max-width: 1000px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    border-left: 4px solid #2ecc71;
+    padding: 15px;
+    height: 110px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    color: #2ecc71;
+    border-radius: 4px;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.4);
+}
+
+/* 6. Control Elements Styling */
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-row {
+    display: flex;
+    gap: 8px;
+}
+
+label {
+    font-size: 0.65rem;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+select, input {
+    background: #000;
+    color: #fff;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+}
+
+input:focus, select:focus {
+    border-color: #2ecc71;
+    outline: none;
+}
+
+input#pInput {
+    color: #fff;
+    font-weight: bold;
+    flex: 1; /* Input takes up available row space */
+}
+
+button {
+    background: #2ecc71;
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s;
+}
+
+button:hover { background: #27ae60; }
+
+.legend {
+    font-size: 0.65rem;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+
+}
