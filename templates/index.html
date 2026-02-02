@@ -23,7 +23,7 @@
         <div>
             <label>p exponent: </label><br>
             <input type="text" id="pInput" value="11" style="margin-top:5px;">
-            <button onclick="plotResonance()">PLOT DATA</button>
+            <button onclick="plotData()">PLOT DATA</button>
             <div class="legend">
                 <span style="color:#ff4444">■ M # (Red)</span> | 
                 <span style="color:#2ecc71">■ Factors (Green)</span>
@@ -33,18 +33,19 @@
         <div>
             <label>Plot Geometry:</label><br>
             <audio id="shinySound" src="{{ url_for('static', filename='shiny.mp3') }}"></audio>            
-            <select id="plotType" oninput="playIfShiny(this)" onchange="plotResonance()" style="margin-top:5px;">
-                <option value="ulam">Ulam Spiral (Central)</option>
+            <select id="plotType" oninput="playIfShiny(this)" onchange="plotData()" style="margin-top:5px;">
+                <option value="binary">Binary Grid</option>
+                <option value="ulam">Ulam Spiral</option>
                 <option value="serpentine">Serpentine Square</option>
                 <option value="shell">Shell Square ✨</option>
                 <option value="hexagon">Centered Hexagon ✨</option>
-                <option value="mod12">Mod 12 Polygon ✨</option>
+                <option value="mod12">Mod 12 Polygon</option>
             </select>
         </div>
 
         <div>
             <label>Zoom Context:</label><br>
-            <select id="zoomMode" onchange="plotResonance()" style="margin-top:5px;">
+            <select id="zoomMode" onchange="plotData()" style="margin-top:5px;">
                 <option value="Factors">Factor Scale (Detailed View)</option>
                 <option value="M #">Full Scale (Show M # Location)</option>
             </select>
@@ -90,6 +91,19 @@ function bigIntSqrt(value) {
     return x;
 }
 
+function getBinaryCoords(n) {
+    const nBI = BigInt(n);
+    if (nBI <= 0n) return { x: 0n, y: 0n };
+    
+    const bitString = nBI.toString(2);
+    const col = BigInt(bitString.length) - 1n;
+    
+    const baseValue = 2n ** col;
+    const row = nBI - baseValue;
+
+    return { x: col, y: row };
+}
+
 function getSerpentineCoords(n) {
     let r = bigIntSqrt(n - 1n);
     let rem = n - (r * r);
@@ -131,251 +145,485 @@ function getSpiralCoordsBigInt(n) {
 }
 
 function getHexCoords(n) {
-    if (n === 1n) return { x: 0, y: 0 };
-
     let nNum = Number(n);
+    if (nNum === 1) return { x: 0, y: 0, layer: 1 };
+
     // Determine which "ring" the number falls into
-    // Layer k contains 6k points. Total points = 3k(k+1) + 1
-    let k = 0;
+    // Layer L (where 1 is Layer 1) contains 6*(L-1) points.
+    let layer = 1;
     let total = 1;
     while (total < nNum) {
-        k++;
-        total += 6 * k;
+        layer++;
+        total += 6 * (layer - 1);
     }
 
-    let layer = k;
-    let firstInLayer = 3 * (layer - 1) * layer + 2;
-    let offset = nNum - firstInLayer;
+    // Mathematical boundary: total points in previous layers
+    let prevTotal = 3 * (layer - 2) * (layer - 1) + 1;
+    let offset = nNum - prevTotal - 1;
 
-    // Start at the top corner of the hexagon ring
     let q = 0;
-    let r = -layer;
+    let r = -(layer - 1);
 
-    // Hexagonal neighbor directions (moving around the ring)
     const dirs = [
         {dq: 1, dr: 0},  {dq: 0, dr: 1}, {dq: -1, dr: 1},
         {dq: -1, dr: 0}, {dq: 0, dr: -1}, {dq: 1, dr: -1}
     ];
 
-    // Travel along the sides of the hexagon to find the specific point
-    let side = Math.floor(offset / layer);
-    let steps = offset % layer;
+    let side = Math.floor(offset / (layer - 1));
+    let steps = offset % (layer - 1);
 
     for (let i = 0; i < side; i++) {
-        q += dirs[i].dq * layer;
-        r += dirs[i].dr * layer;
+        q += dirs[i].dq * (layer - 1);
+        r += dirs[i].dr * (layer - 1);
     }
     q += dirs[side].dq * steps;
     r += dirs[side].dr * steps;
 
-    // Convert Axial (q, r) to Pixel (x, y)
-    // The sqrt(3) constant ensures the hexagons aren't squashed
     return {
         x: (Math.sqrt(3) * q + Math.sqrt(3)/2 * r),
-        y: (3/2 * r)
+        y: (3/2 * r),
+        layer: layer 
     };
 }
 
 // Map n to a 12-sided polygon position
 function getMod12Coords(n) {
     const modValue = Number(n % 12n);
-    const radius = Number(bigIntSqrt(n)); // Distance based on square root magnitude
-    const angle = (modValue * 30 - 90) * (Math.PI / 180); // 30 deg increments, offset to top
+    const ring = Math.ceil(Number(n) / 12);
+    const angle = (modValue * 30 - 90) * (Math.PI / 180); 
     return { 
-        x: radius * Math.cos(angle), 
-        y: radius * Math.sin(angle),
+        x: ring * Math.cos(angle), 
+        y: ring * Math.sin(angle),
         mod: modValue,
-        radius: radius
+        radius: ring
     };
 }
 
-function plotResonance() {
+/**
+ * Main Controller Function
+ */
+function plotData() {
     const canvas = document.getElementById('spiralCanvas');
     const ctx = canvas.getContext('2d');
     const pInput = document.getElementById('pInput').value;
     const zoomMode = document.getElementById('zoomMode').value;
     const plotType = document.getElementById('plotType').value;
     
-    canvas.width = 800; canvas.height = 800;
+    canvas.width = 800; 
+    canvas.height = 800;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const isSquareGrid = (plotType === "serpentine" || plotType === "shell");
-    const isCentered = (plotType === "ulam" || plotType === "mod12" || plotType === "hexagon");
-    const centerX = isSquareGrid ? 40 : 400;
-    const centerY = isSquareGrid ? 40 : 400;
-
-    // Set text alignment for the background grid
-    ctx.textAlign = isSquareGrid ? "left" : "center";
-    ctx.textBaseline = isSquareGrid ? "top" : "middle";
-
+    // 1. Setup Constants and BigInts
     const p = BigInt(pInput);
-    const pMod12 = Number(p % 12n); // Target spoke for highlighting
+    const pMod12 = Number(p % 12n);
     const Mnum = (2n ** p) - 1n;
     const MpMod12 = Number(Mnum % 12n);
     
     const entry = visualData.find(d => d.form === `2^${pInput}-1`);
     let factors = entry ? [...new Set(entry.prime_factor.split(',').map(s => BigInt(s.trim())))] : [];
 
+    // 2. Determine Max Scale
     let maxN = (zoomMode === "M #") ? Mnum : (factors.length > 0 ? factors.reduce((a, b) => a > b ? a : b) : p);
     if (p > maxN && zoomMode !== "M #") maxN = p;
     
-    let baseStep = (canvas.width / 2.5) / Number(bigIntSqrt(maxN));
     let stepSize;
-    if (plotType === "mod12") {
-        stepSize = (canvas.width / 2.2) / Number(bigIntSqrt(maxN));
-    } else if (plotType === "hexagon") {
-        stepSize = (canvas.width / 2.5) / Number(bigIntSqrt(maxN));
-    } else {
-        stepSize = (canvas.width / 2.5) / Number(bigIntSqrt(maxN));
-    }
+    if (plotType === "binary") {
+        const maxBits = Number(maxN.toString(2).length);
+        // Determine the highest row position for scaling
+        const highestCoords = getBinaryCoords(maxN);
+        const maxRow = Number(highestCoords.y);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // --- DRAW MOD 12 WEB WITH P-SPOKE HIGHLIGHT ---
-    if (plotType === "mod12") {
-        for (let i = 0; i < 12; i++) {
-            const angle = (i * 30 - 90) * (Math.PI / 180);
-            const isPSpoke = (i === pMod12);
-            const isMpSpoke = (i === MpMod12);
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX + 400 * Math.cos(angle), centerY + 400 * Math.sin(angle));
-            
-            if (isPSpoke) {
-                ctx.strokeStyle = "#ffff00"; // Yellow for p spoke
-                ctx.lineWidth = 3;
-                ctx.setLineDash([]);
-            } else if (isMpSpoke) {
-                ctx.strokeStyle = "#ff4444"; // Red for M # spoke
-                ctx.lineWidth = 1;
-                ctx.setLineDash([5, 5]);
-            } else {
-                ctx.strokeStyle = "#1a1a1a"; // Dim for others
-                ctx.lineWidth = 1;
-                ctx.setLineDash([]);
-            }
-            ctx.stroke();
-            
-            // Label spokes
-            ctx.fillStyle = isPSpoke ? "#ffff00" : (isMpSpoke ? "#ff4444" : "#444");
-            ctx.font = isPSpoke ? "bold 14px Arial" : "10px Arial";
-            let label = i.toString();
-            if (isPSpoke) label += " (p-spoke)";
-            ctx.fillText(label, centerX + 380 * Math.cos(angle), centerY + 380 * Math.sin(angle));
-        }
-    }
-
-    let getCoords;
-    if (plotType === "mod12") {
-        getCoords = getMod12Coords;
-    } else if (plotType === "ulam") {
-        getCoords = getSpiralCoordsBigInt;
-    } else if (plotType === "shell") {
-        getCoords = getShellCoords;
-    } else if (plotType === "hexagon") {
-        getCoords = getHexCoords;
-    } else {
-        getCoords = getSerpentineCoords;
-    }
-    // ORIGIN
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 12px Courier New";
-    ctx.textAlign = "center";
-    ctx.fillText("ORIGIN", centerX, centerY - 15);
-    ctx.beginPath(); ctx.arc(centerX, centerY, 4, 0, Math.PI * 2); ctx.fill();
-    
-    // --- DRAW HEX-RING BACKGROUND ---
-    if (plotType === "hexagon" && stepSize > 15) {
-        ctx.save();
-        ctx.strokeStyle = "#1a1a1a"; 
-        ctx.lineWidth = 1;
+        // Calculate stepSize based on row count (vertical) and bit count (horizontal)
+        // Adding small padding (+2, +5) to keep markers away from hard edges
+        const stepX = canvas.width / (maxBits + 2);
+        const stepY = canvas.height / (maxRow + 5);
         
-        // Determine how many points to check based on zoom
-        let diameter = Math.ceil(800 / stepSize) + 5;
-        let limit = BigInt(3 * diameter * diameter);
+        stepSize = Math.min(stepX, stepY);
+        
+        // Safety floor for very large numbers
+        if (stepSize < 1) stepSize = 1; 
+    } else {
+        stepSize = (canvas.width / 2.5) / Number(bigIntSqrt(maxN));
+    }
 
-        let currentShell = 0n;
-        let shellStartId = 1n;
+    // 3. Delegate to specific plot functions
+    const plotConfig = {
+        ctx, p, Mnum, factors, stepSize, canvas, pMod12, MpMod12
+    };
+
+    switch (plotType) {
+        case "binary":
+            drawBinaryPlot(plotConfig);
+            break;
+        case "ulam":
+            drawStandardSpiral(plotConfig, getSpiralCoordsBigInt, true);
+            break;
+        case "serpentine":
+            drawStandardSpiral(plotConfig, getSerpentineCoords, false);
+            break;
+        case "shell":
+            drawStandardSpiral(plotConfig, getShellCoords, false);
+            break;
+        case "hexagon":
+            drawHexagonPlot(plotConfig);
+            break;
+        case "mod12":
+            drawMod12Plot(plotConfig);
+            break;
+    }
+
+    // 4. Update Stats
+    const statsContainer = document.getElementById('statsDisplay');
+    
+    if (plotType === "mod12") {
+        statsContainer.innerHTML = 
+            `<span style="color:#ffff00">p: ${p} (mod12: ${pMod12})</span><br>` +
+            `<span style="color:#ff4444">M # mod12: ${MpMod12}</span>`;
+            
+    } else if (plotType === "hexagon") {
+        const mHex = getHexCoords(Mnum);
+        let factorResults = factors.map(f => {
+            const fHex = getHexCoords(f);
+            return `<span style="color:#2ecc71">${f}, Layer ${fHex.layer}</span>`;
+        }).join('<br>');
+
+        statsContainer.innerHTML = 
+            `<b style="color:#fff">2^${p}-1:</b><br>` +
+            `<span style="color:#ff4444">${Mnum}, Layer ${mHex.layer}</span><br>` +
+            `<hr style="border:0; border-top:1px solid #333; margin: 8px 0;">` +
+            `<b style="color:#fff">Factors:</b><br>${factorResults || "N/A"}`;
+
+    } else if (["shell", "serpentine"].includes(plotType)) {
+        const coordFn = (plotType === "ulam") ? getSpiralCoordsBigInt : 
+                        (plotType === "shell") ? getShellCoords : getSerpentineCoords;
+
+        // Apply +1 offset for 1-based indexing on Mersenne Number
+        const mCoords = coordFn(Mnum);
+        const mCol = mCoords.x + 1n;
+        const mRow = mCoords.y + 1n;
+
+        let factorResults = factors.map(f => {
+            const fCoords = coordFn(f);
+            // Apply +1 offset for 1-based indexing on each factor
+            return `<span style="color:#2ecc71">${f}: [Col: ${fCoords.x + 1n}, Row: ${fCoords.y + 1n}]</span>`;
+        }).join('<br>');
+
+        statsContainer.innerHTML = 
+            `<b style="color:#fff">${plotType.toUpperCase()} (1-indexed):</b><br>` +
+            `<span style="color:#ff4444">M#: [Col: ${mCol}, Row: ${mRow}]</span><br>` +
+            `<hr style="border:0; border-top:1px solid #333; margin: 8px 0;">` +
+            `<b style="color:#fff">Factors:</b><br>${factorResults || "N/A"}`;
+    } else if (plotType === "binary") {
+        const mCoords = getBinaryCoords(Mnum);
+        
+        let factorResults = factors.map(f => {
+            const fC = getBinaryCoords(f);
+            // Bit length is the column index + 1
+            const bitLen = fC.x + 1n;
+            // Offset is the row index (distance from the base power of 2)
+            const offset = fC.y;
+            
+            return `<span style="color:#2ecc71">${f}: [BitLen: ${bitLen}, Offset: ${offset}]</span>`;
+        }).join('<br>');
+
+        statsContainer.innerHTML = 
+            `<b style="color:#fff">BINARY PLOT:</b><br>` +
+            `<span style="color:#ff4444">M#: [BitLen: ${mCoords.x + 1n}, Offset: ${mCoords.y}]</span><br>` +
+            `<hr style="border:0; border-top:1px solid #333; margin: 8px 0;">` +
+            `<b style="color:#fff">Factors:</b><br>${factorResults || "N/A"}`;     
+    } else {
+        statsContainer.innerHTML = `Mode: ${plotType.toUpperCase()}<br>p: ${p}`;
+    }
+}
+
+
+/**
+ * --- PLOT TYPE: MOD 12 WEB ---
+ */
+function drawMod12Plot(cfg) {
+    const centerX = 400, centerY = 400;
+
+    // Draw Background Spokes (The Web Lines)
+    for (let i = 0; i < 12; i++) {
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        const isPSpoke = (i === cfg.pMod12);
+        const isMpSpoke = (i === cfg.MpMod12);
+        
+        cfg.ctx.beginPath();
+        cfg.ctx.moveTo(centerX, centerY);
+        cfg.ctx.lineTo(centerX + 400 * Math.cos(angle), centerY + 400 * Math.sin(angle));
+        
+        cfg.ctx.strokeStyle = isPSpoke ? "#ffff00" : (isMpSpoke ? "#ff4444" : "#1a1a1a");
+        cfg.ctx.lineWidth = isPSpoke ? 3 : 1;
+        cfg.ctx.setLineDash(isMpSpoke ? [5, 5] : []);
+        cfg.ctx.stroke();
+        
+        // Spoke Labels
+        cfg.ctx.fillStyle = cfg.ctx.strokeStyle;
+        cfg.ctx.font = isPSpoke ? "bold 14px Arial" : "10px Arial";
+        let label = i.toString() + (isPSpoke ? " (p-spoke)" : "");
+        cfg.ctx.fillText(label, centerX + 380 * Math.cos(angle), centerY + 380 * Math.sin(angle));
+    }
+
+    // Pass the specific "mod12" tag to trigger geometry-based drawing
+    drawCommonElements(cfg, getMod12Coords, centerX, centerY, "mod12");
+}
+
+/**
+ * --- PLOT TYPE: HEXAGONAL GRID ---
+ */
+function drawHexagonPlot(cfg) {
+    const centerX = 400, centerY = 400;
+
+    if (cfg.stepSize > 15) {
+        cfg.ctx.strokeStyle = "#1a1a1a"; 
+        let diameter = Math.ceil(800 / cfg.stepSize) + 5;
+        let limit = BigInt(3 * diameter * diameter);
+        let hexRadius = cfg.stepSize; 
 
         for (let i = 1n; i <= limit; i++) {
-            // Calculate the shell index 'k' for number 'i'
-            // Formula: k = ceil((3 + sqrt(9 + 12(i-1))) / 6)
-            let k = BigInt(Math.ceil((3 + Math.sqrt(9 + 12 * (Number(i) - 1))) / 6));
-            
-            let pos = getCoords(i);
-            let gx = centerX + Number(pos.x) * stepSize;
-            let gy = centerY + Number(pos.y) * stepSize;
+            let pos = getHexCoords(i);
+            let gx = centerX + Number(pos.x) * cfg.stepSize;
+            let gy = centerY + Number(pos.y) * cfg.stepSize;
 
-            if (k !== currentShell) {
-                // If we just finished a shell, close the previous loop back to its start
-                if (currentShell > 1n) {
-                    let sPos = getCoords(shellStartId);
-                    ctx.lineTo(centerX + Number(sPos.x) * stepSize, centerY + Number(sPos.y) * stepSize);
-                    ctx.stroke();
-                }
+            if (gx < -cfg.stepSize || gx > 800 + cfg.stepSize || gy < -cfg.stepSize || gy > 800 + cfg.stepSize) continue;
+
+            cfg.ctx.beginPath();
+            for (let side = 0; side < 6; side++) {
+                let angle = (Math.PI / 3) * side + (Math.PI / 2);
+                let vx = gx + hexRadius * Math.cos(angle);
+                let vy = gy + hexRadius * Math.sin(angle);
+                side === 0 ? cfg.ctx.moveTo(vx, vy) : cfg.ctx.lineTo(vx, vy);
+            }
+            cfg.ctx.closePath();
+            cfg.ctx.stroke();
+        }
+    }
+    drawCommonElements(cfg, getHexCoords, centerX, centerY, "hexagon");
+}
+
+/**
+ * --- PLOT TYPE: SPIRALS (Ulam, Shell, Serpentine) ---
+ */
+function drawStandardSpiral(cfg, coordFn, centered) {
+    const centerX = centered ? 400 : 40;
+    const centerY = centered ? 400 : 40;
+    
+    // Grid squares are now handled inside drawCommonElements based on typeTag
+    drawCommonElements(cfg, coordFn, centerX, centerY, "spiral");
+}
+
+/**
+ * --- DRAW SQUARE GRID ---
+ * Draws a box around each integer position
+ */
+function drawSquareGrid(cfg, coordFn, centerX, centerY) {
+    const { ctx, stepSize } = cfg;
+    
+    if (stepSize < 10) return; 
+
+    ctx.save();
+    ctx.strokeStyle = "#222"; // Darker grid lines for better contrast
+    ctx.lineWidth = 1;
+
+    let diameter = Math.ceil(800 / stepSize) + 5;
+    let total = BigInt(diameter * diameter);
+
+    for (let i = 1n; i <= total; i++) {
+        let pos = coordFn(i);
+        let gx = centerX + Number(pos.x) * stepSize;
+        let gy = centerY + Number(pos.y) * stepSize;
+
+        // Draw only if on screen
+        if (gx >= -stepSize && gx < 850 && gy >= -stepSize && gy < 850) {
+            // Draw the cell border
+            // Centering the square on the coordinate
+            ctx.strokeRect(
+                gx - stepSize / 2, 
+                gy - stepSize / 2, 
+                stepSize, 
+                stepSize
+            );
+        }
+    }
+    ctx.restore();
+}
+
+function drawBinaryPlot(cfg) {
+    const { ctx, stepSize, p, Mnum, factors, canvas } = cfg;
+    const centerX = 100; 
+    const centerY = canvas.height - 100; // Baseline
+
+    let highestVal = Mnum;
+    factors.forEach(f => { if (f > highestVal) highestVal = f; });
+    if (p > highestVal) highestVal = p;
+
+    const maxBits = highestVal.toString(2).length;
+
+    // 1. Draw Grid Lines (BETWEEN columns, not through them)
+    ctx.save();
+    for (let i = 0; i <= maxBits; i++) {
+        // Shift line to the left edge of the square
+        let gx = centerX + (i * stepSize) - (stepSize / 2);
+        
+        ctx.strokeStyle = "#1a1a1a";
+        ctx.beginPath();
+        ctx.moveTo(gx, 0); 
+        ctx.lineTo(gx, centerY + (stepSize / 2));
+        ctx.stroke();
+
+        if (i < maxBits) {
+            ctx.fillStyle = "#666";
+            ctx.font = "10px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(`2^${i}`, centerX + (i * stepSize), centerY + stepSize);
+        }
+    }
+    ctx.restore();
+
+    // 2. Render Squares (Full stack up to highest factor/marker)
+    ctx.save();
+    for (let b = 0n; b < BigInt(maxBits); b++) {
+        let startVal = 2n ** b;
+        let nextPower = 2n ** (b + 1n);
+        let endValForCol = (highestVal < nextPower) ? highestVal + 1n : nextPower;
+
+        for (let currentNum = startVal; currentNum < endValForCol; currentNum++) {
+            let coords = getBinaryCoords(currentNum);
+            let gx = centerX + Number(coords.x) * stepSize;
+            let gy = centerY - Number(coords.y) * stepSize;
+
+            if (gy > -stepSize) {
+                ctx.strokeStyle = "#222";
+                // Center square on coordinate
+                ctx.strokeRect(gx - stepSize/2, gy - stepSize/2, stepSize, stepSize);
                 
-                // Start the new shell ring
-                ctx.beginPath();
-                ctx.moveTo(gx, gy);
-                shellStartId = i;
-                currentShell = k;
-            } else {
-                // Continue drawing the current ring
-                ctx.lineTo(gx, gy);
+                if (stepSize > 30) {
+                    ctx.fillStyle = "#444";
+                    ctx.font = `${stepSize * 0.25}px monospace`;
+                    ctx.textAlign = "center";
+                    ctx.fillText(currentNum.toString(2), gx, gy + (stepSize * 0.1));
+                }
             }
         }
-        ctx.stroke();
-        ctx.restore();
     }
+    ctx.restore();
 
-    // BACKGROUND GRID
+    // 3. Centered Origin and Markers
+    const originCoords = getBinaryCoords(1);
+    const ox = centerX + Number(originCoords.x) * stepSize;
+    const oy = centerY - Number(originCoords.y) * stepSize;
+    
+    // Draw Origin Marker
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(ox, oy, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.font = "bold 12px monospace";
+    ctx.fillText("1 (Origin)", ox - 75, oy + 5);
+
+    // Plot markers (Centered in squares)
+    plotMarker(ctx, p, stepSize, centerX, centerY, "#ffff00", `p (${p})`, 10, getBinaryCoords, canvas, "binary");
+    plotMarker(ctx, Mnum, stepSize, centerX, centerY, "#ff4444", "M #", 12, getBinaryCoords, canvas, "binary");
+    factors.forEach(f => {
+        plotMarker(ctx, f, stepSize, centerX, centerY, "#2ecc71", f.toString(), 8, getBinaryCoords, canvas, "binary");
+    });
+}
+
+/**
+ * Helper to handle Labels, Origin, and Markers across all types
+ */
+function drawCommonElements(cfg, coordFn, centerX, centerY, typeTag) {
+    const { ctx, stepSize, p, Mnum, factors, canvas } = cfg;
+
     if (stepSize > 15) {
-        ctx.fillStyle = "#333";
-        
-        // 1. Correct the alignment for centered grids
-        const isCentered = (plotType === "ulam" || plotType === "mod12" || plotType === "hexagon");
-        ctx.textAlign = isCentered ? "center" : "left";
-        ctx.textBaseline = isCentered ? "middle" : "top";
-        ctx.font = `${Math.min(stepSize * 0.35, 14)}px Courier New`;
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = `${Math.min(stepSize * 0.4, 14)}px 'Courier New'`;
 
-        let diameter = Math.ceil(800 / stepSize) + 5;
-        let totalPoints;
+        const isHex = (typeTag === "hexagon");
+        const isMod12 = (typeTag === "mod12");
+
+        // Calculate the maximum radius needed to hit the corners (approx 566px)
+        const maxCanvasRadius = Math.sqrt(Math.pow(centerX, 2) + Math.pow(centerY, 2));
+        const maxVisibleRings = Math.ceil(maxCanvasRadius / stepSize);
         
-        if (plotType === "hexagon") {
-            totalPoints = BigInt(3 * diameter * diameter); 
+        // Ensure total covers all numbers in those rings
+        let total;
+        if (isMod12) {
+            total = BigInt(maxVisibleRings * 12 + 12); 
         } else {
-            totalPoints = BigInt(diameter * diameter);
+            let diameter = Math.ceil(800 / stepSize) + 10;
+            total = BigInt(diameter * diameter * (isHex ? 3 : 1));
         }
 
-        for (let i = 1n; i <= totalPoints; i++) {
-            let pos = getCoords(i);
+        for (let i = 1n; i <= total; i++) {
+            let pos = coordFn(i);
             let gx = centerX + Number(pos.x) * stepSize;
             let gy = centerY + Number(pos.y) * stepSize;
             
-            // 3. Draw if it's anywhere on the visible canvas
-            if (gx >= -stepSize && gx < canvas.width + stepSize && 
-                gy >= -stepSize && gy < canvas.height + stepSize) {
+            // Draw if it is within or slightly outside the canvas bounds
+            if (gx >= -stepSize && gx < 850 && gy >= -stepSize && gy < 850) {
+                ctx.strokeStyle = "#1a1a1a";
+                ctx.lineWidth = 1;
+
+                if (isMod12) {
+                    const modVal = Number(i % 12n);
+                    const ring = Math.ceil(Number(i) / 12); 
+                    
+                    const angleStep = Math.PI / 6; 
+                    const startAngle = (modVal * angleStep) - (Math.PI / 2) - (angleStep / 2);
+                    const endAngle = startAngle + angleStep;
+
+                    const innerR = (ring - 0.5) * stepSize;
+                    const outerR = (ring + 0.5) * stepSize;
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, outerR, startAngle, endAngle);
+                    ctx.lineTo(centerX + innerR * Math.cos(endAngle), centerY + innerR * Math.sin(endAngle));
+                    ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true);
+                    ctx.closePath();
+                    ctx.stroke();
+
+                } else if (!isHex) {
+                    ctx.strokeRect(gx - stepSize / 2, gy - stepSize / 2, stepSize, stepSize);
+                }
+
+                ctx.fillStyle = "#333";
                 ctx.fillText(i.toString(), gx, gy);
             }
         }
+        ctx.restore();
     }
 
-    // Plot Markers
-    plotMarker(ctx, p, stepSize, centerX, centerY, "#ffff00", `p (${p})`, 8, getCoords, canvas, plotType);
-    plotMarker(ctx, Mnum, stepSize, centerX, centerY, "#ff4444", "M #", 10, getCoords, canvas, plotType);
-    factors.forEach(f => {
-        plotMarker(ctx, f, stepSize, centerX, centerY, "#2ecc71", f.toString(), 6, getCoords, canvas, plotType);
-    });
+    // Origin
+    ctx.save();
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.fillText("ORIGIN", centerX, centerY - 15);
+    ctx.beginPath(); ctx.arc(centerX, centerY, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
 
-    document.getElementById('statsDisplay').innerHTML = 
-        `<span style="color:#ffff00">p: ${p} (mod12: ${pMod12})</span><br>` +
-        `<span style="color:#ff4444">M # mod12: ${MpMod12}</span>`;
+    // Markers
+    plotMarker(ctx, p, stepSize, centerX, centerY, "#ffff00", `p (${p})`, 8, coordFn, canvas, typeTag);
+    plotMarker(ctx, Mnum, stepSize, centerX, centerY, "#ff4444", "M #", 10, coordFn, canvas, typeTag);
+    factors.forEach(f => {
+        plotMarker(ctx, f, stepSize, centerX, centerY, "#2ecc71", f.toString(), 6, coordFn, canvas, typeTag);
+    });
 }
+
 
 function plotMarker(ctx, n, stepSize, centerX, centerY, color, label, size, coordFn, canvas, type) {
     let coords = coordFn(n);
-    let targetX = centerX + Number(coords.x) * stepSize;
-    let targetY = centerY + Number(coords.y) * stepSize;
+    let targetX, targetY;
+
+    if (type === "binary") {
+        // Linearly plot relative to the new bottom-left origin
+        targetX = centerX + Number(coords.x) * stepSize;
+        targetY = centerY - Number(coords.y) * stepSize; 
+    } else {
+        targetX = centerX + Number(coords.x) * stepSize;
+        targetY = centerY + Number(coords.y) * stepSize;
+    }
 
     let dx = targetX - centerX;
     let dy = targetY - centerY;
@@ -435,7 +683,7 @@ function plotMarker(ctx, n, stepSize, centerX, centerY, color, label, size, coor
     }
 }
 
-plotResonance();
+plotData();
 </script>
 </body>
 </html>

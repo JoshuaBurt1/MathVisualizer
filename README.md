@@ -1,5 +1,5 @@
 # MathVisualizer
 
-Visualize number using alternative coordinate systems
+Visualize math using grids
 
 https://mathvisualizer-awga.onrender.com/
