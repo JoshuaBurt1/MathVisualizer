@@ -80,27 +80,26 @@ canvas.addEventListener('click', (e) => {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Iterate through the hitboxes created during the last draw call
+    // Check hitboxes from last draw
     for (const box of markerHitBoxes) {
         const dx = mouseX - box.x;
         const dy = mouseY - box.y;
         
-        // Check if mouse is within the hit area (square or circular check)
-        if (Math.abs(dx) < box.size && Math.abs(dy) < box.size) {
-            // Found a hit! Centering camera on this BigInt value
-            jumpToNumber(box.n, box.coordFn);
-            return; // Stop looking after finding the topmost hit
+        // Use a slightly larger click area for small markers/high zoom
+        const hitArea = Math.max(box.size, 15); 
+        
+        if (Math.abs(dx) < hitArea && Math.abs(dy) < hitArea) {
+            // Get current plot type from UI
+            const currentPlotType = document.getElementById('plotType').value;
+            // Get first p from input to maintain scale
+            const pInputRaw = document.getElementById('pInput').value;
+            const pValues = parsePInput(pInputRaw);
+            const referenceP = pValues.length > 0 ? BigInt(pValues[0]) : 11n;
+
+            jumpToNumber(box.n, currentPlotType, referenceP);
+            return; 
         }
     }
-});
-
-window.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    offsetX += e.clientX - lastMouseX;
-    offsetY += e.clientY - lastMouseY;
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-    requestAnimationFrame(plotData);
 });
 
 canvas.addEventListener('wheel', (e) => {
@@ -118,6 +117,15 @@ canvas.addEventListener('wheel', (e) => {
     requestAnimationFrame(plotData);
 }, { passive: false });
 
+window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    offsetX += e.clientX - lastMouseX;
+    offsetY += e.clientY - lastMouseY;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    requestAnimationFrame(plotData);
+});
+
 window.addEventListener('mouseup', () => isDragging = false);
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
@@ -125,14 +133,28 @@ window.addEventListener('resize', () => {
     plotData();
 });
 
+// Add the "Enter" key listener to the pInput field
+document.getElementById('pInput').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Stop page refresh if inside a form
+        plotData();            // Run your existing plot function
+    }
+});
+
 function onPlotChange() { recenterCamera(); }
 
 function recenterCamera() {
     const plotType = document.getElementById('plotType').value;
-    zoom = 1.0; 
+    zoom = 0.3; 
+    if (plotType === "binary") {
+        zoom = 1.2; 
+    }
     if (["shell", "serpentine", "binary"].includes(plotType)) {
-        offsetX = 100; offsetY = 100;
+        // Offset from top-left for grid-style layouts
+        offsetX = 120; 
+        offsetY = 120;
     } else {
+        // True center for Ulam, Hexagon, and Mod12
         offsetX = window.innerWidth / 2;
         offsetY = window.innerHeight / 2;
     }
@@ -153,14 +175,18 @@ function bigIntSqrt(value) {
     return x;
 }
 
-// Fixed Binary: Grows DOWN and RIGHT
 function getBinaryCoords(n) {
     const nBI = BigInt(n);
     if (nBI <= 0n) return { x: 0n, y: 0n };
+    
     const bitString = nBI.toString(2);
-    const col = BigInt(bitString.length) - 1n;
-    const baseValue = 2n ** col;
-    const row = nBI - baseValue;
+    // Y represents the "Power of 2" (Row), starting at 0 for number 1
+    const row = BigInt(bitString.length) - 1n;
+    
+    // X represents the "Offset" from that power of 2 (Column)
+    const baseValue = 2n ** row;
+    const col = nBI - baseValue;
+    
     return { x: col, y: row };
 }
 
@@ -200,13 +226,17 @@ function getSpiralCoordsBigInt(n) {
 
 function getHexCoords(n) {
     let nNum = Number(n);
-    if (nNum === 1) return { x: 0, y: 0 };
+    if (nNum <= 1) return { x: 0, y: 0 };
     
-    let layer = 1, total = 1;
-    while (total < nNum) { layer++; total += 6 * (layer - 1); }
+    // 1. Calculate layer directly using the quadratic formula
+    // 3L^2 - 3L + (1 - n) = 0
+    let layer = Math.ceil((3 + Math.sqrt(9 - 12 * (1 - nNum))) / 6);
     
+    // 2. Find the starting point of this layer
     let prevTotal = 3 * (layer - 2) * (layer - 1) + 1;
     let offset = nNum - prevTotal - 1;
+    
+    // q, r are axial coordinates
     let q = 0, r = -(layer - 1);
     
     const dirs = [
@@ -214,19 +244,18 @@ function getHexCoords(n) {
         {dq: -1, dr: 0}, {dq: 0, dr: -1}, {dq: 1, dr: -1}
     ];
     
-    let side = Math.floor(offset / (layer - 1));
-    let steps = offset % (layer - 1);
+    let sideLen = layer - 1;
+    let side = Math.floor(offset / sideLen);
+    let steps = offset % sideLen;
     
+    // Move to the correct side and then step along it
     for (let i = 0; i < side; i++) { 
-        q += dirs[i].dq * (layer - 1); 
-        r += dirs[i].dr * (layer - 1); 
+        q += dirs[i].dq * sideLen; 
+        r += dirs[i].dr * sideLen; 
     }
     q += dirs[side].dq * steps; 
     r += dirs[side].dr * steps;
 
-    // Fixed math for touching hexagons:
-    // The horizontal distance between centers is sqrt(3) * radius
-    // The vertical distance between centers is 1.5 * radius
     return { 
         x: (Math.sqrt(3) * q + Math.sqrt(3)/2 * r), 
         y: (1.5 * r) 
@@ -242,60 +271,158 @@ function getMod12Coords(n) {
 /**
  * --- RENDERING ENGINE ---
  */
+function parsePInput(input) {
+    const results = new Set(); // Use Set to avoid duplicates
+    const parts = input.split(',');
+
+    parts.forEach(part => {
+        if (part.includes('..')) {
+            const range = part.split('..');
+            const start = parseInt(range[0]);
+            const end = parseInt(range[1]);
+            if (!isNaN(start) && !isNaN(end)) {
+                for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
+                    results.add(i);
+                }
+            }
+        } else {
+            const val = parseInt(part.trim());
+            if (!isNaN(val)) results.add(val);
+        }
+    });
+    return Array.from(results).sort((a, b) => a - b);
+}
+
 function plotData() {
     markerHitBoxes = []; 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const pInput = document.getElementById('pInput').value;
+    const pInputRaw = document.getElementById('pInput').value;
     const plotType = document.getElementById('plotType').value;
     const formulaType = document.getElementById('formulaType').value; 
-    const p = BigInt(pInput);
-    const formulaLabel = `2^${pInput}${formulaType === "minus" ? "-1" : "+1"}`;
     
-    const entry = visualData.find(d => d.form === formulaLabel || (d.p == pInput && d.type === formulaType));
-    
-    if (!entry) {
-        document.getElementById('statsDisplay').innerHTML = `<b>Error:</b> ${formulaLabel} not found in database.`;
-        return; 
-    }
+    const pValues = parsePInput(pInputRaw);
+    if (pValues.length === 0) return;
 
-    const Mnum = BigInt(entry.number);
-    let factors = entry.factors 
-        ? entry.factors.split(',').filter(s => s.trim() !== "").map(s => BigInt(s.trim())) 
-        : [];
+    let allFoundEntries = [];
+    pValues.forEach(pVal => {
+        const formulaLabel = `2^${pVal}${formulaType === "minus" ? "-1" : "+1"}`;
+        const entry = visualData.find(d => d.form === formulaLabel || (d.p == pVal && d.type === formulaType));
+        if (entry) allFoundEntries.push({ pVal, entry });
+    });
 
-    // --- AUTO-ZOOM LOGIC ---
-    // 1. Find the highest factor <= 1000
-    const nearbyFactors = factors.filter(f => f <= 1000n);
-    let zoomTargetN;
+    if (allFoundEntries.length === 0) return;
 
-    if (nearbyFactors.length > 0) {
-        // If factors <= 1000 exist, zoom to the largest one among them
-        zoomTargetN = nearbyFactors[nearbyFactors.length - 1];
-    } else {
-        // Otherwise, zoom to p
-        zoomTargetN = p;
-    }
-
-    // 2. Calculate baseStepSize based on zoomTargetN
-    // This ensures the target number is comfortably visible on screen
+    // Determine zoom/step size based on the first item
+    const referenceScale = 10n; 
     let baseStepSize = (plotType === "binary") 
-        ? (canvas.width / 40) 
-        : (canvas.width / 2.5) / Number(bigIntSqrt(zoomTargetN || 1n));
-    
+    ? (canvas.width / 40) 
+    : (canvas.width / 2.5) / Number(bigIntSqrt(referenceScale));
     let finalStep = baseStepSize * zoom;
 
-    const cfg = { ctx, p, Mnum, factors, stepSize: finalStep, canvas, centerX: offsetX, centerY: offsetY };
+    const gridCfg = { ctx, stepSize: finalStep, canvas, centerX: offsetX, centerY: offsetY };
 
-    // --- RENDER ---
-    if (plotType === "hexagon") drawHexagonPlot(cfg);
-    else if (plotType === "mod12") drawMod12Plot(cfg);
-    else if (plotType === "binary") drawCommonElements(cfg, getBinaryCoords, "binary");
-    else if (plotType === "ulam") drawCommonElements(cfg, getSpiralCoordsBigInt, "spiral");
-    else if (plotType === "serpentine") drawCommonElements(cfg, getSerpentineCoords, "serpentine");
-    else if (plotType === "shell") drawCommonElements(cfg, getShellCoords, "shell");
+    // --- DRAW BACKGROUND ONLY ONCE ---
+    const coordFn = getCoordFnByType(plotType);
+    drawBackgroundGrid(gridCfg, coordFn, plotType);
 
-    updateStats(plotType, p, formulaLabel, Mnum, factors, entry);
+    // --- DRAW MARKERS AND LINES FOR EACH P ---
+    allFoundEntries.forEach(({ pVal, entry }) => {
+        const Mnum = BigInt(entry.number);
+        const factors = entry.factors 
+            ? entry.factors.split(',').filter(s => s.trim() !== "").map(s => BigInt(s.trim())) 
+            : [];
+        const pBI = BigInt(pVal);
+
+        const drawCfg = { ...gridCfg, p: pBI, Mnum, factors };
+        drawMarkersAndLines(drawCfg, coordFn, plotType);
+    });
+
+    updateStats(plotType, allFoundEntries);
+}
+
+// Helper to get the right coordinate function
+function getCoordFnByType(type) {
+    if (type === "binary") return getBinaryCoords;
+    if (type === "ulam") return getSpiralCoordsBigInt;
+    if (type === "serpentine") return getSerpentineCoords;
+    if (type === "shell") return getShellCoords;
+    if (type === "hexagon") return getHexCoords;
+    if (type === "mod12") return getMod12Coords;
+    return getSpiralCoordsBigInt;
+}
+
+// Draws the numbers 1-2000 and the grid lines once
+function drawBackgroundGrid(cfg, coordFn, typeTag) {
+    const { ctx, stepSize, canvas, centerX, centerY } = cfg;
+    if (stepSize <= 2 || typeTag === "mod12") return;
+
+    ctx.save();
+    ctx.strokeStyle = "#1a1a1a";
+    // Set text alignment properties once outside the loop for performance
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle"; // This is the key to perfect centering
+
+    for (let i = 1n; i <= 2000n; i++) {
+        let pos = coordFn(i);
+        let gx = centerX + Number(pos.x) * stepSize;
+        let gy = centerY + Number(pos.y) * stepSize;
+        
+        if (gx > -stepSize && gx < canvas.width + stepSize && gy > -stepSize && gy < canvas.height + stepSize) {
+            if (typeTag === "hexagon") {
+                drawHexPath(ctx, gx, gy, stepSize);
+                ctx.stroke();
+            } else {
+                ctx.strokeRect(gx - stepSize/2, gy - stepSize/2, stepSize, stepSize);
+            }
+
+            if (stepSize > 30) {
+                ctx.fillStyle = "#444"; 
+                ctx.font = `${stepSize * 0.3}px monospace`;
+                // Use gx and gy directly without manual offsets (+4)
+                ctx.fillText(i.toString(), gx, gy);
+            }
+        }
+    }
+    ctx.restore();
+}
+
+// Draws the dashed lines and the colored squares/hexagons for the data
+function drawMarkersAndLines(cfg, coordFn, typeTag) {
+    const { ctx, stepSize, p, Mnum, factors, centerX, centerY } = cfg;
+
+    // Draw Dashed Tracker Lines
+    if (typeTag !== "mod12") {
+        const drawLine = (targetN, color) => {
+            const startPos = coordFn(1n);
+            const endPos = coordFn(targetN);
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = 0.4;
+            ctx.lineWidth = 2;
+            ctx.moveTo(centerX + Number(startPos.x) * stepSize, centerY + Number(startPos.y) * stepSize);
+            ctx.lineTo(centerX + Number(endPos.x) * stepSize, centerY + Number(endPos.y) * stepSize);
+            ctx.stroke();
+            ctx.restore();
+        };
+
+        drawLine(p, "#ffff00");
+        factors.forEach(f => drawLine(f, "#00ff88"));
+        drawLine(Mnum, factors.length === 0 ? "#e74c3c" : "#3498db");
+    }
+
+    // Draw Specific Markers
+    plotMarker(cfg, 1n, "#ffffff", "1", 12, coordFn, typeTag);
+    plotMarker(cfg, p, "#ffff00", `p(${p})`, 8, coordFn, typeTag); 
+    
+    if (factors.length === 0) {
+        plotMarker(cfg, Mnum, "#e74c3c", `M# (Prime)`, 10, coordFn, typeTag);
+    } else {
+        factors.forEach(f => plotMarker(cfg, f, "#00ff88", f.toString(), 6, coordFn, typeTag));
+        plotMarker(cfg, Mnum, "#3498db", `M# (Comp)`, 10, coordFn, typeTag);
+    }
 }
 
 function drawCommonElements(cfg, coordFn, typeTag) {
@@ -509,6 +636,7 @@ function drawMod12Plot(cfg) {
 
 function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false) {
     const { ctx, stepSize, centerX, centerY, canvas } = cfg;
+    const isExponent = label.startsWith("p(");
     const nBI = BigInt(n);
     const pos = coordFn(nBI);
     const tx = centerX + Number(pos.x) * stepSize;
@@ -522,10 +650,19 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
     ctx.save();
 
     if (!isOffScreen) {
-        // --- ON-SCREEN HITMAP ---
         markerHitBoxes.push({ n: nBI, x: tx, y: ty, size: Math.max(stepSize, 20), coordFn: coordFn });
 
-        ctx.fillStyle = color;
+        // 1. Set styles based on whether it's an exponent
+        if (isExponent) {
+            ctx.strokeStyle = color; // Yellow
+            ctx.lineWidth = 3;       // Thicker outline
+        } else {
+            ctx.fillStyle = color;   // Normal solid fill
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+        }
+
+        // 2. Draw Geometry
         if (type === "mod12") {
             const ring = Math.ceil(Number(nBI) / 12);
             const modVal = Number(nBI % 12n);
@@ -539,27 +676,31 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
             ctx.lineTo(centerX + innerR * Math.cos(endAngle), centerY + innerR * Math.sin(endAngle));
             ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true);
             ctx.closePath();
-            ctx.fill();
-            ctx.strokeStyle = "#fff";
-            ctx.stroke();
+            
+            // Outline if exponent, otherwise fill
+            if (isExponent) ctx.stroke(); else { ctx.fill(); ctx.stroke(); }
+
         } else if (type === "hexagon") {
             drawHexPath(ctx, tx, ty, stepSize); 
-            ctx.fill();
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
+            if (isExponent) ctx.stroke(); else { ctx.fill(); ctx.stroke(); }
+            
         } else {
-            ctx.fillRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
+            // Standard Grids (Binary, Ulam, etc.)
+            if (isExponent) {
+                ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
+            } else {
+                ctx.fillRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
+                ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
+            }
         }
 
+        // 3. Update Text Color
         if (stepSize > 20) {
-            ctx.fillStyle = "#000"; 
+            // Use yellow text for the outlined yellow box, black text for solid filled boxes
+            ctx.fillStyle = isExponent ? color : "#000"; 
             ctx.textAlign = "center"; 
             ctx.textBaseline = "middle";
-            ctx.font = `${stepSize * 0.3}px monospace`; 
+            ctx.font = `bold ${stepSize * 0.3}px monospace`; 
             const vOff = (type === "hexagon") ? 0 : 4;
             ctx.fillText(n.toString(), tx, ty + vOff);
         }
@@ -615,46 +756,31 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
     ctx.restore();
 }
 
-function jumpToNumber(nBI, coordFn) {
-    const plotType = document.getElementById('plotType').value;
-    const pInput = document.getElementById('pInput').value;
-    const formulaType = document.getElementById('formulaType').value;
-    const formulaLabel = `2^${pInput}${formulaType === "minus" ? "-1" : "+1"}`;
+function jumpToNumber(nBI, type, refP) {
+    const coordFn = getCoordFnByType(type);
     
-    const entry = visualData.find(d => d.form === formulaLabel);
-    if (!entry) return;
-
-    const p = BigInt(pInput);
-    let factors = entry.factors 
-        ? entry.factors.split(',').filter(s => s.trim() !== "").map(s => BigInt(s.trim())) 
-        : [];
-
-    // --- MATCH THE RENDERER'S ZOOM LOGIC ---
-    const nearbyFactors = factors.filter(f => f <= 1000n);
-    let zoomTargetN = (nearbyFactors.length > 0) 
-        ? nearbyFactors[nearbyFactors.length - 1] 
-        : p;
-
-    let baseStepSize = (plotType === "binary") 
+    // Calculate the scale (Must match plotData exactly)
+    const referenceScale = 10n; 
+    let baseStepSize = (type === "binary") 
         ? (canvas.width / 40) 
-        : (canvas.width / 2.5) / Number(bigIntSqrt(zoomTargetN || 1n));
+        : (canvas.width / 2.5) / Number(bigIntSqrt(referenceScale));
     
     let finalStep = baseStepSize * zoom;
 
-    // Get coordinates for the target number
+    // Get the relative grid position
     const pos = coordFn(nBI);
     
-    // Calculate new offsets to put the target in the center of the screen
-    // We subtract the target's world position from the screen center
+    // To center: Offset = (Half Canvas Width) - (Target Coordinate * StepSize)
     offsetX = (canvas.width / 2) - (Number(pos.x) * finalStep);
     offsetY = (canvas.height / 2) - (Number(pos.y) * finalStep);
 
+    // Re-render immediately
     requestAnimationFrame(plotData);
 }
 
-function updateStats(type, p, label, Mnum, factors, entry) {
+function updateStats(type, allFoundEntries) {
     const statsDiv = document.getElementById('statsDisplay');
-    if (!entry) return;
+    if (!allFoundEntries || allFoundEntries.length === 0) return;
 
     const getCoordFn = () => {
         switch (type) {
@@ -664,43 +790,66 @@ function updateStats(type, p, label, Mnum, factors, entry) {
             case "shell": return getShellCoords;
             case "hexagon": return getHexCoords;
             case "mod12": return getMod12Coords;
-            default: return getShellCoords;
+            default: return getSpiralCoordsBigInt;
         }
-    };
-
-    const getGeomData = (nBI, index = -1) => {
-        let labelText = "";
-        switch (type) {
-            case "binary": labelText = index === -1 ? `Bits ${entry.binaryBitlen}, Offset ${entry.binaryOffset}` : `Bits ${entry.factorBinaryBitlen[index]}, Offset ${entry.factorBinaryOffset[index]}`; break;
-            case "ulam": labelText = index === -1 ? `Shell ${entry.ulamShell}` : `Shell ${entry.factorUlamShell[index]}`; break;
-            case "serpentine": labelText = index === -1 ? `Row ${entry.serpentineRow}, Col ${entry.serpentineColumn}` : `Row ${entry.factorSerpentineRow[index]}, Col ${entry.factorSerpentineColumn[index]}`; break;
-            case "shell": labelText = index === -1 ? `Row ${entry.squareRow}, Col ${entry.squareCol}` : `Row ${entry.factorSquareRow[index]}, Col ${entry.factorSquareCol[index]}`; break;
-            case "hexagon": labelText = index === -1 ? `Shell ${entry.hexagonShell}` : `Shell ${entry.factorHexagonShell[index]}`; break;
-            case "mod12": labelText = `Ring ${Math.ceil(Number(nBI) / 12)}, Val ${nBI % 12n}`; break;
-        }
-        return `<span style="color: #bbb;">${labelText}</span>`;
     };
 
     const coordFn = getCoordFn();
-    let html = `<div style="font-family: monospace; line-height: 1.8; font-size: 14px;">`;
-    
-    // Number: Red if Prime, Blue if Composite
-    const mValueColor = factors.length > 0 ? '#3498db' : '#e74c3c'; 
-    html += `<div>
-                <span style="color: #bbb;">Number:</span> 
-                <b style="color: ${mValueColor}; cursor: pointer;" onclick="jumpToNumber(BigInt('${Mnum}'), ${coordFn.name})">${Mnum}</b><span style="color: #bbb;">,</span> 
-                ${getGeomData(Mnum)}
-             </div>`;
+    let html = `<div style="font-family: monospace; line-height: 1.6; font-size: 13px;">`;
 
-    // Factors: Always Green
-    factors.forEach((f, i) => {
-        html += `<div>
-                    <span style="color: #bbb;">Factor:</span> 
-                    <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), ${coordFn.name})">${f}</b><span style="color: #bbb;">,</span> 
-                    ${getGeomData(f, i)}
+    // Iterate through ALL entries instead of just the first one
+    allFoundEntries.forEach(({ pVal, entry }) => {
+        const Mnum = BigInt(entry.number);
+        const factors = entry.factors 
+            ? entry.factors.split(',').filter(s => s.trim() !== "").map(s => BigInt(s.trim())) 
+            : [];
+
+        const getGeomData = (nBI, index = -1) => {
+            let labelText = "";
+            switch (type) {
+                case "binary": 
+                    labelText = index === -1 ? `Bits ${entry.binaryBitlen}, Offset ${entry.binaryOffset}` : `Bits ${entry.factorBinaryBitlen[index]}, Offset ${entry.factorBinaryOffset[index]}`; 
+                    break;
+                case "ulam": 
+                    labelText = index === -1 ? `Shell ${entry.ulamShell}` : `Shell ${entry.factorUlamShell[index]}`; 
+                    break;
+                case "serpentine": 
+                    labelText = index === -1 ? `Row ${entry.serpentineRow}, Col ${entry.serpentineColumn}` : `Row ${entry.factorSerpentineRow[index]}, Col ${entry.factorSerpentineColumn[index]}`; 
+                    break;
+                case "shell": 
+                    labelText = index === -1 ? `Row ${entry.squareRow}, Col ${entry.squareCol}` : `Row ${entry.factorSquareRow[index]}, Col ${entry.factorSquareCol[index]}`; 
+                    break;
+                case "hexagon": 
+                    labelText = index === -1 ? `Shell ${entry.hexagonShell}` : `Shell ${entry.factorHexagonShell[index]}`; 
+                    break;
+                case "mod12": 
+                    labelText = `Ring ${Math.ceil(Number(nBI) / 12)}, Val ${nBI % 12n}`; 
+                    break;
+            }
+            return `<span style="color: #bbb;">${labelText}</span>`;
+        };
+
+        // Header for each sequence
+        html += `<div style="color: #ffff00; margin-top: 10px; border-bottom: 1px solid #333; padding-bottom: 2px;">SEQUENCE: ${entry.form}</div>`;
+
+        // Main Number Row
+        const mValueColor = factors.length > 0 ? '#3498db' : '#e74c3c'; 
+        html += `<div style="margin-left: 10px;">
+                    <span style="color: #bbb;">Number:</span> 
+                    <b style="color: ${mValueColor}; cursor: pointer;" onclick="jumpToNumber(BigInt('${Mnum}'), '${type}', ${pVal})">${Mnum}</b><span style="color: #bbb;">,</span>  
+                    ${getGeomData(Mnum)}
                  </div>`;
-    });
 
+        // Factor Rows
+        factors.forEach((f, i) => {
+            html += `<div style="margin-left: 10px;">
+                        <span style="color: #bbb;">Factor:</span> 
+                        <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), '${type}', ${pVal})">${f}</b>
+                        <span style="color: #bbb;">,</span>  
+                        ${getGeomData(f, i)}
+                    </div>`;
+        });
+    });
     html += `</div>`;
     statsDiv.innerHTML = html;
 }
