@@ -28,12 +28,12 @@
         <div class="control-group">
             <label>3. Plot Geometry</label>
             <audio id="shinySound" src="{{ url_for('static', filename='shiny.mp3') }}"></audio>
-            <select id="plotType" oninput="playIfShiny(this)" onchange="onPlotChange()">
+            <select id="plotType" onchange="onPlotChange()">
                 <option value="binary">Binary Grid</option>
                 <option value="ulam">Ulam Spiral</option>
                 <option value="serpentine">Serpentine Square</option>
-                <option value="shell">Shell Square ✨</option>
-                <option value="hexagon">Centered Hexagon ✨</option>
+                <option value="shell">Shell Square </option>
+                <option value="hexagon">Centered Hexagon </option>
                 <option value="mod12">Mod 12 Polygon</option>
             </select>
         </div>
@@ -504,7 +504,6 @@ function drawMod12Plot(cfg) {
         }
     }
     ctx.restore();
-
     drawCommonElements(cfg, getMod12Coords, "mod12");
 }
 
@@ -695,22 +694,15 @@ function updateStats(type, p, label, Mnum, factors, entry) {
 
     // Factors: Always Green
     factors.forEach((f, i) => {
-    html += `<div>
-                <span style="color: #bbb;">Factor:</span> 
-                <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), ${coordFn.name})">${f}</b><span style="color: #bbb;">,</span> 
-                ${getGeomData(f, i)}
-             </div>`;
-    })
+        html += `<div>
+                    <span style="color: #bbb;">Factor:</span> 
+                    <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), ${coordFn.name})">${f}</b><span style="color: #bbb;">,</span> 
+                    ${getGeomData(f, i)}
+                 </div>`;
+    });
 
     html += `</div>`;
     statsDiv.innerHTML = html;
-}
-
-function playIfShiny(sel) {
-    if (sel.options[sel.selectedIndex].text.includes('✨')) {
-        const s = document.getElementById('shinySound');
-        s.currentTime = 0; s.play().catch(()=>{});
-    }
 }
 
 window.onload = () => { recenterCamera(); };
