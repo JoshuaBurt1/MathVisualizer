@@ -90,6 +90,12 @@ window.addEventListener('resize', () => {
     plotData();
 });
 
+document.addEventListener('change', (e) => {
+    if (e.target.id === 'showLines') {
+        plotData();
+    }
+});
+
 // Add the "Enter" key listener to the pInput field
 document.getElementById('pInput').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
@@ -530,10 +536,14 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
 
 // Draws the dashed lines and the colored squares/hexagons for the data
 function drawMarkersAndLines(cfg, coordFn, typeTag) {
-    // 1. Destructure isMnumPrime from the config
     const { ctx, stepSize, p, Mnum, factors, canvas, centerX, centerY, isMnumPrime } = cfg;
 
     const drawLine = (targetN, color) => {
+        // Check the toggle inside the line helper specifically
+        if (document.getElementById('showLines') && !document.getElementById('showLines').checked) {
+            return; 
+        }
+
         ctx.save();
         ctx.beginPath();
         ctx.setLineDash([5, 5]);
@@ -771,11 +781,12 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
 
     } else {
         // --- OFF-SCREEN TRACKING ---
-        // (Logic remains identical to your provided snippet)
         const time = performance.now() / 500;
         const edgeX = Math.max(margin, Math.min(canvas.width - margin, tx));
         const edgeY = Math.max(margin, Math.min(canvas.height - margin, ty));
         
+        markerHitBoxes.push({ n: nBI, x: edgeX, y: edgeY, size: 20, coordFn: coordFn });
+
         const pulse = (Math.sin(time * 2) + 1) / 2;
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;

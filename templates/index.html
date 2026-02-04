@@ -10,7 +10,7 @@
 
     <div class="controls">
         <div class="control-group">
-            <label>1. Sequence Type</label>
+            <label>1. SEQUENCE TYPE</label>
             <select id="formulaType" onchange="toggleCustomInput(); plotData();">
                 <option value="minus">2^p - 1 (Mersenne)</option>
                 <option value="plus">2^p + 1 (Fermat)</option>
@@ -19,12 +19,12 @@
         </div>
 
         <div class="control-group" id="customFormulaGroup" style="display: none;">
-            <label>Enter Formula (e.g., n^2 + 1)</label>
+            <label>ENTER FORMULA (e.g., n^2-n+40)</label>
             <input type="text" id="customFormula" value="n^2" placeholder="n^2">
         </div>
 
         <div class="control-group">
-            <label>2. Variables</label>
+            <label>2. VARIABLES (e.g., 1..39 or 1,4)</label>
             <div class="input-row">
                 <input type="text" id="pInput" value="11">
                 <button onclick="plotData()">PLOT</button>
@@ -33,7 +33,7 @@
 
         <!--Shell Square: Axes:(n^2 × n^2-2(n-1)); Midpoint: ((n^2)+(n^2-2*(n-1)))/2  -->
         <div class="control-group">
-            <label>3. Plot Geometry</label>
+            <label>3. PLOT GEOMETRY</label>
             <select id="plotType" onchange="onPlotChange()">
                 <optgroup label="2D Grids">
                     <option value="binary">Binary Grid</option>
@@ -46,6 +46,13 @@
                     <option value="mod12">Mod 12 Polygon</option>
                 </optgroup>
             </select>
+        </div>
+
+        <div class="control-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="showLines" checked onchange="plotData()"> 
+                Show Tracking Lines
+            </label>
         </div>
 
         <button onclick="recenterCamera()" style="background: #444; color: #fff; margin-top: 10px;">Recenter View</button>
