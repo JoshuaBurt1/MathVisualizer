@@ -11,31 +11,37 @@
     <div class="controls">
         <div class="control-group">
             <label>1. Sequence Type</label>
-            <select id="formulaType" onchange="plotData()">
+            <select id="formulaType" onchange="toggleCustomInput(); plotData();">
                 <option value="minus">2^p - 1 (Mersenne)</option>
                 <option value="plus">2^p + 1 (Fermat)</option>
+                <option value="custom">Custom Formula (use 'n')</option>
             </select>
         </div>
 
+        <div class="control-group" id="customFormulaGroup" style="display: none;">
+            <label>Enter Formula (e.g., n^2 + 1)</label>
+            <input type="text" id="customFormula" value="n^2" placeholder="n^2">
+        </div>
+
         <div class="control-group">
-            <label>2. p Exponent</label>
+            <label>2. Variables</label>
             <div class="input-row">
                 <input type="text" id="pInput" value="11">
                 <button onclick="plotData()">PLOT</button>
             </div>
         </div>
 
+        <!--Shell Square: Axes:(n^2 × n^2-2(n-1)); Midpoint: ((n^2)+(n^2-2*(n-1)))/2  -->
         <div class="control-group">
             <label>3. Plot Geometry</label>
             <select id="plotType" onchange="onPlotChange()">
-                <optgroup label="2D Cartesian Grids">
+                <optgroup label="2D Grids">
                     <option value="binary">Binary Grid</option>
                     <option value="ulam">Ulam Spiral</option>
                     <option value="serpentine">Serpentine Square</option>
-                    <option value="shell">Shell Square</option>
+                    <option value="shell">Shell Square</option> 
                     <option value="hexagon">Centered Hexagon</option>
                 </optgroup>
-                
                 <optgroup label="Polar Grids">
                     <option value="mod12">Mod 12 Polygon</option>
                 </optgroup>

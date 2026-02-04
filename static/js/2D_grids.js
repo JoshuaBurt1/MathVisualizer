@@ -1,6 +1,16 @@
 /**
  * --- GLOBAL CAMERA STATE ---
  */
+const MAX_N = 10000;
+const isPrime = new Array(MAX_N).fill(true);
+isPrime[0] = isPrime[1] = false;
+for (let p = 2; p * p < MAX_N; p++) {
+    if (isPrime[p]) {
+        for (let i = p * p; i < MAX_N; i += p)
+            isPrime[i] = false;
+    }
+}
+
 let markerHitBoxes = [];
 let offsetX = window.innerWidth / 2;
 let offsetY = window.innerHeight / 2;
@@ -114,6 +124,64 @@ function recenterCamera() {
 const dataElement = document.getElementById('n_data');
 const visualData = JSON.parse(dataElement.textContent);
 
+function checkPrimality(n) {
+    let val = BigInt(n);
+    if (val < 2n) return false;
+    if (val === 2n || val === 3n) return true;
+    if (val % 2n === 0n || val % 3n === 0n) return false;
+    
+    // For custom formulas, check against your pre-computed Sieve first (Fastest)
+    if (val < BigInt(MAX_N)) return isPrime[Number(val)];
+
+    // Fallback: Simple trial division for large custom numbers (Still faster than JSON)
+    for (let i = 5n; i * i <= val; i += 6n) {
+        if (val % i === 0n || val % (i + 2n) === 0n) return false;
+    }
+    return true;
+}
+
+function getFactorsBigInt(n) {
+    let val = BigInt(n);
+    const factors = [];
+    if (val < 2n) return factors;
+
+    let temp = val;
+    // Handle 2 separately
+    while (temp % 2n === 0n) {
+        factors.push(2n);
+        temp /= 2n;
+    }
+    // Handle 3 separately
+    while (temp % 3n === 0n) {
+        factors.push(3n);
+        temp /= 3n;
+    }
+
+    // Trial division up to a reasonable limit (1,000,000) for UI responsiveness
+    let i = 5n;
+    const limit = 1000000n; 
+    while (i * i <= temp && i < limit) {
+        while (temp % i === 0n) {
+            factors.push(i);
+            temp /= i;
+        }
+        i += 2n;
+        while (temp % i === 0n) {
+            factors.push(i);
+            temp /= i;
+        }
+        i += 4n;
+    }
+
+    // If temp > 1, the remaining part is either prime or has very large factors
+    if (temp > 1n && temp !== val) {
+        factors.push(temp);
+    }
+
+    // Return unique factors to avoid cluttering the map with duplicates (like 2, 2, 2)
+    return [...new Set(factors)];
+}
+
 function bigIntSqrt(value) {
     if (value < 2n) return value;
     let x = value / 2n + 1n;
@@ -212,6 +280,32 @@ function getHexCoords(n) {
 /**
  * --- RENDERING ENGINE ---
  */
+
+/**
+ * Evaluates a string formula (e.g., "n^2 + 1") using BigInt.
+ * Replaces '^' with '**' for JS compatibility.
+ */
+function evaluateCustomFormula(formulaStr, nValue) {
+    try {
+        // Prepare the formula string: replace '^' with '**'
+        const jsFormula = formulaStr.replace(/\^/g, '**');
+        
+        // Create a function that treats 'n' as a BigInt
+        // We wrap components in BigInt() to ensure type consistency
+        const evaluator = new Function('n', `
+            try {
+                return BigInt(${jsFormula.replace(/(\d+)/g, 'BigInt($1)')});
+            } catch(e) {
+                return BigInt(eval("${jsFormula}"));
+            }
+        `);
+        return evaluator(BigInt(nValue));
+    } catch (e) {
+        console.error("Formula Error:", e);
+        return null;
+    }
+}
+
 function parsePInput(input) {
     const results = new Set(); // Use Set to avoid duplicates
     const parts = input.split(',');
@@ -241,14 +335,45 @@ function plotData() {
     const pInputRaw = document.getElementById('pInput').value;
     const plotType = document.getElementById('plotType').value;
     const formulaType = document.getElementById('formulaType').value; 
+    const customFormulaStr = document.getElementById('customFormula')?.value || "n"; 
     
     const pValues = parsePInput(pInputRaw);
     if (pValues.length === 0) return;
 
     let allFoundEntries = [];
+
     pValues.forEach(pVal => {
-        const formulaLabel = `2^${pVal}${formulaType === "minus" ? "-1" : "+1"}`;
-        const entry = visualData.find(d => d.form === formulaLabel || (d.p == pVal && d.type === formulaType));
+        let entry = null;
+
+        if (formulaType === "custom") {
+            const calculatedM = evaluateCustomFormula(customFormulaStr, pVal);
+            if (calculatedM === null) return;
+
+            const isActuallyPrime = checkPrimality(calculatedM);
+            
+            // Calculate factors for the custom number
+            // We only run this if it's not prime to save performance
+            let factorList = isActuallyPrime ? [] : getFactorsBigInt(calculatedM);
+
+            entry = {
+                number: calculatedM.toString(),
+                form: `${customFormulaStr}, n=${pVal}`,
+                p: pVal,
+                // Convert BigInt array to comma-separated string for compatibility
+                factors: factorList.map(f => f.toString()).join(', ')
+            };
+            entry.isActuallyPrime = isActuallyPrime;
+        } else {
+            // Standard Logic: Rely on JSON factors
+            const formulaLabel = `2^${pVal}${formulaType === "minus" ? "-1" : "+1"}`;
+            entry = visualData.find(d => d.form === formulaLabel || (d.p == pVal && d.type === formulaType));
+            
+            if (entry) {
+                // If factors string is empty or null, it's prime in our DB
+                entry.isActuallyPrime = (!entry.factors || entry.factors.trim() === "");
+            }
+        }
+
         if (entry) allFoundEntries.push({ pVal, entry });
     });
 
@@ -289,9 +414,15 @@ function plotData() {
         const factors = entry.factors 
             ? entry.factors.split(',').filter(s => s.trim() !== "").map(s => BigInt(s.trim())) 
             : [];
-        const pBI = BigInt(pVal);
-
-        const drawCfg = { ...gridCfg, p: pBI, Mnum, factors };
+        
+        // Use the flag we set in the loop above
+        const drawCfg = { 
+            ...gridCfg, 
+            p: BigInt(pVal), 
+            Mnum, 
+            factors, 
+            isMnumPrime: entry.isActuallyPrime 
+        };
         drawMarkersAndLines(drawCfg, coordFn, plotType);
     });
 
@@ -320,40 +451,76 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
     const { ctx, stepSize, canvas, centerX, centerY } = cfg;
     if (stepSize <= 2) return;
 
+    // Get active P values to hide grey "ghost" numbers behind yellow highlights
+    const pInputRaw = document.getElementById('pInput').value;
+    const activePs = parsePInput(pInputRaw).map(p => BigInt(p));
+
     ctx.save();
     ctx.strokeStyle = "#1a1a1a";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.lineWidth = 1;
 
-    // 1. CALCULATE BOUNDS
-    // Instead of 1 to 2000, we find the range of visible "units"
-    const halfW = canvas.width / 2;
-    const halfH = canvas.height / 2;
-    
-    // 2. ITERATE 
-    // For specific grids like Spiral/Ulam, we'd ideally calculate bounds,
-    // but for now, we'll keep the loop but apply STRICT clipping.
-    for (let i = 1n; i <= 2000n; i++) {
+    for (let i = 1n; i <= 4096n; i++) {
         let pos = coordFn(i);
         let gx = centerX + Number(pos.x) * stepSize;
         let gy = centerY + Number(pos.y) * stepSize;
         
-        // STRICT CLIPPING: 0 to Width/Height (no padding)
         if (gx >= 0 && gx <= canvas.width && gy >= 0 && gy <= canvas.height) {
-            
-            // Draw Grid Shape
+            const nNum = Number(i);
+
+            // 1. DRAW GRID SHAPE
             if (typeTag === "hexagon") {
-                const hexRadius = stepSize;
-                drawHexPath(ctx, gx, gy, hexRadius);
+                drawHexPath(ctx, gx, gy, stepSize);
                 ctx.stroke();
             } else {
                 ctx.strokeRect(gx - stepSize/2, gy - stepSize/2, stepSize, stepSize);
             }
 
-            // Draw Background Number
-            if (stepSize > 30) {
+            // 2. DRAW PRIME "POCKET" BOX (Only if Prime)
+            if (isPrime[nNum] && stepSize > 40) {
+                const boxSize = stepSize * 0.25;
+                ctx.beginPath();
+                
+                if (typeTag === "hexagon") {
+                    // Hexagon Top-Right Vertex Logic
+                    const angle = -Math.PI / 6; // 330 degrees
+                    const vx = gx + stepSize * Math.cos(angle);
+                    const vy = gy + stepSize * Math.sin(angle);
+                    
+                    // Draw lines following hexagon edges inward
+                    ctx.moveTo(vx - boxSize, vy + (boxSize * 0.5)); 
+                    ctx.stroke();
+
+                    // Label P
+                    ctx.fillStyle = "#666";
+                    ctx.font = `${stepSize * 0.15}px monospace`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("P", vx - boxSize * 0.7, vy + boxSize * 0.3);
+                } else {
+                    // Square Top-Right Logic
+                    const top = gy - stepSize / 2;
+                    const right = gx + stepSize / 2;
+
+                    ctx.moveTo(right - boxSize, top);
+                    ctx.stroke();
+
+                    // Label P
+                    ctx.fillStyle = "#666";
+                    ctx.font = `${boxSize * 0.7}px monospace`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("P", right - (boxSize/2), top + (boxSize/2));
+                }
+            }
+
+            // 3. DRAW BACKGROUND NUMBER
+            // Only draw if not currently highlighted in yellow
+            const isHighlighted = activePs.includes(i);
+            if (stepSize > 30 && !isHighlighted) {
                 ctx.fillStyle = "#444"; 
                 ctx.font = `${stepSize * 0.3}px monospace`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
                 ctx.fillText(i.toString(), gx, gy);
             }
         }
@@ -363,9 +530,9 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
 
 // Draws the dashed lines and the colored squares/hexagons for the data
 function drawMarkersAndLines(cfg, coordFn, typeTag) {
-    const { ctx, stepSize, p, Mnum, factors, canvas, centerX, centerY } = cfg;
+    // 1. Destructure isMnumPrime from the config
+    const { ctx, stepSize, p, Mnum, factors, canvas, centerX, centerY, isMnumPrime } = cfg;
 
-    // 2. DRAW DASHED TRACKER LINES
     const drawLine = (targetN, color) => {
         ctx.save();
         ctx.beginPath();
@@ -377,10 +544,8 @@ function drawMarkersAndLines(cfg, coordFn, typeTag) {
         const endPos = coordFn(targetN);
         
         if (typeTag === "mod12") {
-            // Absolute center of the polar coordinate system
             ctx.moveTo(centerX, centerY); 
         } else {
-            // Traditional behavior for Cartesian grids
             const startPos = coordFn(1n);
             ctx.moveTo(centerX + Number(startPos.x) * stepSize, centerY + Number(startPos.y) * stepSize);
         }
@@ -390,22 +555,31 @@ function drawMarkersAndLines(cfg, coordFn, typeTag) {
         ctx.restore();
     };
 
-    drawLine(p, "#ffff00");
-    factors.forEach(f => drawLine(f, "#00ff88"));
-    drawLine(Mnum, factors.length === 0 ? "#e74c3c" : "#3498db");
+    // Determine colors based on the primality flag passed from plotData
+    const mnumColor = isMnumPrime ? "#e74c3c" : "#3498db";
+    const mnumLabel = isMnumPrime ? `M# (Prime)` : `M# (Comp)`;
 
-    // 3. DRAW MARKERS
+    // Draw tracker lines
+    drawLine(p, "#ffff00");
+    factors.forEach(f => {
+        if (typeof f === 'bigint') drawLine(f, "#00ff88");
+    });
+    drawLine(Mnum, mnumColor);
+
+    // --- 3. DRAW MARKERS ---
     if (typeTag !== "mod12") {
         plotMarker(cfg, 1n, "#ffffff", "1", 12, coordFn, typeTag); 
     }    
+    // Draw the main calculated number
+    plotMarker(cfg, Mnum, mnumColor, mnumLabel, 10, coordFn, typeTag);
     plotMarker(cfg, p, "#ffff00", `p(${p})`, 8, coordFn, typeTag); 
 
-    if (factors.length === 0) {
-        plotMarker(cfg, Mnum, "#e74c3c", `M# (Prime)`, 10, coordFn, typeTag);
-    } else {
-        factors.forEach(f => plotMarker(cfg, f, "#00ff88", f.toString(), 6, coordFn, typeTag));
-        plotMarker(cfg, Mnum, "#3498db", `M# (Comp)`, 10, coordFn, typeTag);
-    }
+    // Draw factors only if they are actual numbers (BigInts)
+    factors.forEach(f => {
+        if (typeof f === 'bigint') {
+            plotMarker(cfg, f, "#00ff88", f.toString(), 6, coordFn, typeTag);
+        }
+    });
 }
 
 /** * MISSING HELPER: Draws the grid background for non-radial plots 
@@ -419,7 +593,7 @@ function drawGridBackground(cfg, coordFn, typeTag) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    for (let i = 1n; i <= 2000n; i++) {
+    for (let i = 1n; i <= 4096n; i++) {
         let pos = coordFn(i);
         let gx = centerX + Number(pos.x) * stepSize;
         let gy = centerY + Number(pos.y) * stepSize;
@@ -461,7 +635,7 @@ function drawHexagonPlot(cfg) {
     ctx.textBaseline = "middle";
 
     // Increase the limit to ensure the screen is filled
-    const limit = 2000n; 
+    const limit = 4096n; 
 
     for (let i = 1n; i <= limit; i++) {
         let pos = getHexCoords(i);
@@ -494,8 +668,11 @@ function drawHexagonPlot(cfg) {
 function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false) {
     const { ctx, stepSize, centerX, centerY, canvas } = cfg;
     const isExponent = label.startsWith("p(");
+    const isFactor = color === "#00ff88"; 
+    const isPower = color === "#ffff00" || isExponent;
     const nBI = BigInt(n);
-    const pos = coordFn(nBI);
+    const pos = (type === "mod12") ? getMod12Coords(nBI) : coordFn(nBI);
+    
     const tx = centerX + Number(pos.x) * stepSize;
     const ty = centerY + Number(pos.y) * stepSize;
 
@@ -503,88 +680,102 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
     const isOffScreen = tx < -stepSize || tx > canvas.width + stepSize || 
                         ty < -stepSize || ty > canvas.height + stepSize;
 
-    const time = performance.now() / 500; 
     ctx.save();
 
     if (!isOffScreen) {
         markerHitBoxes.push({ n: nBI, x: tx, y: ty, size: Math.max(stepSize, 20), coordFn: coordFn });
 
-        // 1. Set styles based on whether it's an exponent
-        if (isExponent) {
-            ctx.strokeStyle = color; // Yellow
-            ctx.lineWidth = 3;       // Thicker outline
+        // --- 1. GEOMETRY DRAWING (Cells/Borders) ---
+        if (type === "mod12") {
+            const innerR = (pos.ring - 1) * stepSize;
+            const outerR = pos.ring * stepSize;
+            const startAngle = pos.angle - (15 * Math.PI / 180);
+            const endAngle = pos.angle + (15 * Math.PI / 180);
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outerR, startAngle, endAngle);
+            ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true);
+            ctx.closePath();
+
+            // Rule: Only stroke if it's NOT a factor and NOT a power
+            if (!isFactor && !isPower) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
         } else {
-            ctx.fillStyle = color;   // Normal solid fill
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1.5;
-        }
-        if (type === "hexagon") {
-            drawHexPath(ctx, tx, ty, stepSize); 
-            if (isExponent) ctx.stroke(); else { ctx.fill(); ctx.stroke(); }
-        }
-        // --- ADD THIS BLOCK ---
-        else if (type === "mod12") {
-    const nNum = Number(nBI);
-    const ring = Math.ceil(nNum / 12);
-    const modVal = nNum % 12 === 0 ? 12 : nNum % 12; 
-
-    // Define the cell boundaries
-    const innerR = (ring - 1) * stepSize;
-    const outerR = ring * stepSize;
-    
-    // Angles for the wedge edges
-    const startAngle = (modVal * 30 - 105) * (Math.PI / 180);
-    const endAngle = (modVal * 30 - 75) * (Math.PI / 180);
-
-    // --- DRAW EDGES ONLY ---
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, outerR, startAngle, endAngle); // Outer edge
-    ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true); // Inner edge
-    ctx.closePath();
-    
-    ctx.strokeStyle = color; 
-    ctx.lineWidth = 3; 
-    ctx.stroke();
-
-    // --- HITBOX LOGIC ---
-    const midR = (ring - 0.5) * stepSize;
-    const midAngle = (modVal * 30 - 90) * (Math.PI / 180);
-    const hx = centerX + midR * Math.cos(midAngle);
-    const hy = centerY + midR * Math.sin(midAngle);
-    markerHitBoxes.push({ n: nBI, x: hx, y: hy, size: stepSize, coordFn: coordFn });
-
-    // IMPORTANT: Return early so the code below (which draws text/boxes) is skipped
-    ctx.restore();
-    return; 
-} else {
-            // Standard Grids (Binary, Ulam, etc.)
-            if (isExponent) {
-                ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
-            } else {
-                ctx.fillRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
-                ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
+            // Standard Grid / Hexagon logic
+            if (!isFactor && !isPower) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                if (type === "hexagon") {
+                    drawHexPath(ctx, tx, ty, stepSize);
+                    ctx.stroke();
+                } else {
+                    ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
+                }
             }
         }
 
-        // 3. Update Text Color
-        if (stepSize > 20) {
-            ctx.fillStyle = isExponent ? color : "#000"; 
-            ctx.textAlign = "center"; 
-            ctx.textBaseline = "middle"; // This handles vertical centering
-            ctx.font = `bold ${stepSize * 0.3}px monospace`; 
-            
-            // Remove the manual vOff logic; 'middle' baseline is more reliable
-            ctx.fillText(n.toString(), tx, ty); 
+        // --- 2. TEXT & INDICATORS ---
+        if (stepSize > 15) {
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // --- Inside plotMarker function, under TEXT & INDICATORS ---
+
+            if (isFactor) {
+                const fontSize = stepSize * 0.2;
+                ctx.font = `${fontSize}px monospace`;
+                ctx.fillStyle = "#00ff88";
+
+                if (type === "mod12") {
+                    // ... (Keep your working Mod12 logic here)
+                    const fAngle = pos.angle - (8 * Math.PI / 180);
+                    const fRadius = (pos.ring - 0.7) * stepSize;
+                    const fx = centerX + fRadius * Math.cos(fAngle);
+                    const fy = centerY + fRadius * Math.sin(fAngle);
+                    ctx.fillText("F", fx, fy);
+                } else if (type === "hexagon") {
+                    // --- FIXED HEXAGON LOGIC ---
+                    // P is at -30 deg (330). Opposite is 150 deg (5*PI/6)
+                    const oppositeAngle = 5 * Math.PI / 6; 
+                    
+                    // Calculate the vertex position at 150 degrees
+                    const vx = tx + stepSize * Math.cos(oppositeAngle);
+                    const vy = ty + stepSize * Math.sin(oppositeAngle);
+                    
+                    // Offset "F" inward toward the center of the hexagon, 
+                    // mirroring the P-label's inward offset
+                    const offsetX = (stepSize * 0.2) * Math.cos(oppositeAngle + Math.PI);
+                    const offsetY = (stepSize * 0.2) * Math.sin(oppositeAngle + Math.PI);
+                    
+                    ctx.fillText("F", vx + offsetX, vy + offsetY);
+                } else {
+                    // Standard Square Logic (Bottom-Left is opposite Top-Right)
+                    const bottom = ty + stepSize / 2;
+                    const left = tx - stepSize / 2;
+                    ctx.fillText("F", left + (stepSize * 0.15), bottom - (stepSize * 0.15));
+                }
+            }
+
+            // Main Number Rendering
+            ctx.font = `${stepSize * 0.3}px monospace`;
+            if (isPower) {
+                ctx.fillStyle = "#ffff00"; // Power highlight
+            } else {
+                ctx.fillStyle = "#ffffff"; // Standard white for primes/composites
+            }
+            ctx.fillText(n.toString(), tx, ty);
         }
+
     } else {
         // --- OFF-SCREEN TRACKING ---
+        // (Logic remains identical to your provided snippet)
+        const time = performance.now() / 500;
         const edgeX = Math.max(margin, Math.min(canvas.width - margin, tx));
         const edgeY = Math.max(margin, Math.min(canvas.height - margin, ty));
-
-        // --- OFF-SCREEN HITMAP ---
-        // We push the edge coordinates so the radar pulses are clickable
-        markerHitBoxes.push({ n: nBI, x: edgeX, y: edgeY, size: 25, coordFn: coordFn });
-
+        
         const pulse = (Math.sin(time * 2) + 1) / 2;
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
@@ -592,38 +783,12 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
         ctx.arc(edgeX, edgeY, 10 + (pulse * 15), 0, Math.PI * 2);
         ctx.globalAlpha = 1 - pulse;
         ctx.stroke();
-
+        
         ctx.globalAlpha = 1.0;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = color;
         ctx.fillStyle = color;
         ctx.beginPath(); 
         ctx.arc(edgeX, edgeY, 8, 0, Math.PI * 2); 
         ctx.fill();
-        ctx.shadowBlur = 0;
-
-        const angle = Math.atan2(ty - edgeY, tx - edgeX);
-        ctx.translate(edgeX, edgeY);
-        ctx.rotate(angle);
-        ctx.beginPath();
-        ctx.moveTo(12, 0);
-        ctx.lineTo(0, -6);
-        ctx.lineTo(0, 6);
-        ctx.closePath();
-        ctx.fill();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 14px monospace";
-        ctx.textAlign = tx < margin ? "left" : (tx > canvas.width - margin ? "right" : "center");
-        const textOffsetX = tx < margin ? 15 : (tx > canvas.width - margin ? -15 : 0);
-        const textOffsetY = ty < margin ? 25 : -20;
-        const labelText = `${label}`;
-        const textWidth = ctx.measureText(labelText).width;
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(edgeX + textOffsetX - (textWidth/2) - 5, edgeY + textOffsetY - 10, textWidth + 10, 18);
-        ctx.fillStyle = color;
-        ctx.fillText(labelText, edgeX + textOffsetX, edgeY + textOffsetY + 4);
     }
     ctx.restore();
 }
@@ -656,72 +821,119 @@ function updateStats(type, allFoundEntries) {
     const statsDiv = document.getElementById('statsDisplay');
     if (!allFoundEntries || allFoundEntries.length === 0) return;
 
-    const getCoordFn = () => {
-        switch (type) {
-            case "binary": return getBinaryCoords;
-            case "ulam": return getSpiralCoordsBigInt;
-            case "serpentine": return getSerpentineCoords;
-            case "shell": return getShellCoords;
-            case "hexagon": return getHexCoords;
-            default: return getSpiralCoordsBigInt;
-        }
-    };
+    const formulaType = document.getElementById('formulaType').value;
 
-    const coordFn = getCoordFn();
     let html = `<div style="font-family: monospace; line-height: 1.6; font-size: 13px;">`;
 
-    // Iterate through ALL entries instead of just the first one
     allFoundEntries.forEach(({ pVal, entry }) => {
         const Mnum = BigInt(entry.number);
         const factors = entry.factors 
             ? entry.factors.split(',').filter(s => s.trim() !== "").map(s => BigInt(s.trim())) 
             : [];
 
+        // Helper to handle geometric labels for custom or standard formulas
         const getGeomData = (nBI, index = -1) => {
+    const pos = getCoordFnByType(type)(nBI);
+    const toBI = (val) => typeof val === 'bigint' ? val : BigInt(Math.floor(val));
+
+    // --- CUSTOM FORMULA FORMATTING ---
+    if (formulaType === "custom") {
+        let label = "";
+        switch (type) {
+            case "binary":
+                // Row + 1, Offset - 1
+                const bRow = toBI(pos.y) + 1n;
+                const bOff = toBI(pos.x);
+                label = `Bits ${bRow}, Offset ${bOff}`;
+                break;
+
+            case "ulam":
+            case "hexagon":
+                // Shell logic + 1
+                let shellVal;
+                if (type === "hexagon") {
+                    shellVal = Math.ceil((3 + Math.sqrt(9 - 12 * (1 - Number(nBI)))) / 6);
+                } else {
+                    // Ulam/Spiral shell calculation + 1
+                    shellVal = (bigIntSqrt(nBI - 1n) + 1n) / 2n + 1n;
+                }
+                label = `Shell ${shellVal}`;
+                break;
+
+            case "shell":
+            case "serpentine":
+                // Grid-based: Row + 1, Col + 1
+                label = `Row ${toBI(pos.y) + 1n}, Col ${toBI(pos.x) + 1n}`;
+                break;
+
+            default:
+                label = `X: ${toBI(pos.x) + 1n}, Y: ${toBI(pos.y) + 1n}`;
+        }
+        return `<span style="color: #bbb;">${label}</span>`;
+    }
+
             let labelText = "";
-            switch (type) {
-                case "binary": 
-                    labelText = index === -1 ? `Bits ${entry.binaryBitlen}, Offset ${entry.binaryOffset}` : `Bits ${entry.factorBinaryBitlen[index]}, Offset ${entry.factorBinaryOffset[index]}`; 
-                    break;
-                case "ulam": 
-                    labelText = index === -1 ? `Shell ${entry.ulamShell}` : `Shell ${entry.factorUlamShell[index]}`; 
-                    break;
-                case "serpentine": 
-                    labelText = index === -1 ? `Row ${entry.serpentineRow}, Col ${entry.serpentineColumn}` : `Row ${entry.factorSerpentineRow[index]}, Col ${entry.factorSerpentineColumn[index]}`; 
-                    break;
-                case "shell": 
-                    labelText = index === -1 ? `Row ${entry.squareRow}, Col ${entry.squareCol}` : `Row ${entry.factorSquareRow[index]}, Col ${entry.factorSquareCol[index]}`; 
-                    break;
-                case "hexagon": 
-                    labelText = index === -1 ? `Shell ${entry.hexagonShell}` : `Shell ${entry.factorHexagonShell[index]}`; 
-                    break;
-            }
+            try {
+                switch (type) {
+                    case "binary": 
+                        labelText = index === -1 ? `Bits ${entry.binaryBitlen}, Offset ${entry.binaryOffset}` : `Bits ${entry.factorBinaryBitlen[index]}, Offset ${entry.factorBinaryOffset[index]}`; 
+                        break;
+                    case "ulam": 
+                        labelText = index === -1 ? `Shell ${entry.ulamShell}` : `Shell ${entry.factorUlamShell[index]}`; 
+                        break;
+                    case "serpentine": 
+                        labelText = index === -1 ? `Row ${entry.serpentineRow}, Col ${entry.serpentineColumn}` : `Row ${entry.factorSerpentineRow[index]}, Col ${entry.factorSerpentineColumn[index]}`; 
+                        break;
+                    case "shell": 
+                        labelText = index === -1 ? `Row ${entry.squareRow}, Col ${entry.squareCol}` : `Row ${entry.factorSquareRow[index]}, Col ${entry.factorSquareCol[index]}`; 
+                        break;
+                    case "hexagon": 
+                        labelText = index === -1 ? `Shell ${entry.hexagonShell}` : `Shell ${entry.factorHexagonShell[index]}`; 
+                        break;
+                }
+            } catch(e) { labelText = "N/A"; }
             return `<span style="color: #bbb;">${labelText}</span>`;
         };
 
         // Header for each sequence
         html += `<div style="color: #ffff00; margin-top: 10px; border-bottom: 1px solid #333; padding-bottom: 2px;">SEQUENCE: ${entry.form}</div>`;
 
-        // Main Number Row
-        const mValueColor = factors.length > 0 ? '#3498db' : '#e74c3c'; 
-        html += `<div style="margin-left: 10px;">
+        // --- MAIN NUMBER COLOR LOGIC ---
+        // Red if prime (#e74c3c), Blue if composite (#3498db)
+        const mValueColor = entry.isActuallyPrime ? '#e74c3c' : '#3498db'; 
+        html += `<div>
                     <span style="color: #bbb;">Number:</span> 
-                    <b style="color: ${mValueColor}; cursor: pointer;" onclick="jumpToNumber(BigInt('${Mnum}'), '${type}', ${pVal})">${Mnum}</b><span style="color: #bbb;">,</span>  
+                    <b style="color: ${mValueColor}; cursor: pointer;" onclick="jumpToNumber(BigInt('${Mnum}'),'${type}', ${pVal})">${Mnum}<span style="color: #bbb;">,</span></b>
                     ${getGeomData(Mnum)}
                  </div>`;
 
-        // Factor Rows
+        // --- FACTOR COLOR LOGIC ---
+        // Always Green (#00ff88)
         factors.forEach((f, i) => {
-            html += `<div style="margin-left: 10px;">
-                        <span style="color: #bbb;">Factor:</span> 
-                        <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), '${type}', ${pVal})">${f}</b>
-                        <span style="color: #bbb;">,</span>  
+            html += `<div>
+                        <span style="color: #bbb;"> Factor:</span> 
+                        <b style="color: #00ff88; cursor: pointer;" onclick="jumpToNumber(BigInt('${f}'), '${type}', ${pVal})">${f}<span style="color: #bbb;">,</span></b>
                         ${getGeomData(f, i)}
                     </div>`;
         });
     });
+
     html += `</div>`;
     statsDiv.innerHTML = html;
 }
+
+function toggleCustomInput() {
+    const type = document.getElementById('formulaType').value;
+    const customGroup = document.getElementById('customFormulaGroup');
+    if (customGroup) {
+        customGroup.style.display = (type === 'custom') ? 'block' : 'none';
+    }
+}
+
+// Update your existing onPlotChange or add to event listeners
+document.getElementById('formulaType').addEventListener('change', () => {
+    toggleCustomInput();
+    plotData();
+});
 
 window.onload = () => { recenterCamera(); };
