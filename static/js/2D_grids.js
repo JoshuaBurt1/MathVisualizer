@@ -99,12 +99,21 @@ document.addEventListener('change', (e) => {
 // Add the "Enter" key listener to the pInput field
 document.getElementById('pInput').addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
-        event.preventDefault(); // Stop page refresh if inside a form
-        plotData();            // Run your existing plot function
+        event.preventDefault();
+        plotData();
     }
 });
 
-function onPlotChange() { recenterCamera(); }
+function onPlotChange() { 
+    const plotType = document.getElementById('plotType').value;
+    const modGroup = document.getElementById('nSelectorGroup');
+    if (modGroup) {
+        modGroup.style.display = (plotType === "nPolygon") ? "block" : "none";
+    }
+    recenterCamera(); 
+}
+document.getElementById('nValue')?.addEventListener('input', plotData);
+
 
 function recenterCamera() {
     const plotType = document.getElementById('plotType').value;
@@ -398,7 +407,7 @@ function plotData() {
     const coordFn = getCoordFnByType(plotType);
 
     // Determine which background logic to use
-    if (plotType === "mod12") {
+    if (plotType === "nPolygon") {
         // Collect all numbers that will be markers to prevent double-printing
         let activeMarkers = [1n]; 
         allFoundEntries.forEach(({entry}) => {
@@ -409,7 +418,7 @@ function plotData() {
         });
 
         // Call the function from 2D_polar_grids.js
-        drawMod12Background(ctx, finalStep, canvas, offsetX, offsetY, activeMarkers);
+        drawPolygonBackground(ctx, finalStep, canvas, offsetX, offsetY, activeMarkers);
     } else {
         drawBackgroundGrid(gridCfg, coordFn, plotType);
     }
@@ -431,7 +440,6 @@ function plotData() {
         };
         drawMarkersAndLines(drawCfg, coordFn, plotType);
     });
-
     updateStats(plotType, allFoundEntries);
 }
 
@@ -444,8 +452,8 @@ function getCoordFnByType(type) {
     if (type === "hexagon") return getHexCoords;
     
     // Check if the polar script is loaded
-    if (type === "mod12") {
-        return (typeof getMod12Coords === "function") ? getMod12Coords : getSpiralCoordsBigInt;
+    if (type === "nPolygon") {
+        return (typeof getPolygonCoords === "function") ? getPolygonCoords : getSpiralCoordsBigInt;
     }
     
     return getSpiralCoordsBigInt;
@@ -457,10 +465,7 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
     const { ctx, stepSize, canvas, centerX, centerY } = cfg;
     if (stepSize <= 2) return;
 
-    // Get active P values to hide grey "ghost" numbers behind yellow highlights
-    const pInputRaw = document.getElementById('pInput').value;
-    const activePs = parsePInput(pInputRaw).map(p => BigInt(p));
-
+    // REMOVED: The logic that hides numbers if they are active powers
     ctx.save();
     ctx.strokeStyle = "#1a1a1a";
     ctx.lineWidth = 1;
@@ -481,38 +486,28 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
                 ctx.strokeRect(gx - stepSize/2, gy - stepSize/2, stepSize, stepSize);
             }
 
-            // 2. DRAW PRIME "POCKET" BOX (Only if Prime)
+            // 2. DRAW PRIME "POCKET" BOX (Maintains the P indicator)
             if (isPrime[nNum] && stepSize > 40) {
                 const boxSize = stepSize * 0.25;
                 ctx.beginPath();
-                
                 if (typeTag === "hexagon") {
-                    // Hexagon Top-Right Vertex Logic
-                    const angle = -Math.PI / 6; // 330 degrees
+                    const angle = -Math.PI / 6; 
                     const vx = gx + stepSize * Math.cos(angle);
                     const vy = gy + stepSize * Math.sin(angle);
-                    
-                    // Draw lines following hexagon edges inward
                     ctx.moveTo(vx - boxSize, vy + (boxSize * 0.5)); 
                     ctx.stroke();
-
-                    // Label P
                     ctx.fillStyle = "#666";
-                    ctx.font = `${stepSize * 0.15}px monospace`;
+                    ctx.font = `${boxSize * 0.8}px monospace`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     ctx.fillText("P", vx - boxSize * 0.7, vy + boxSize * 0.3);
                 } else {
-                    // Square Top-Right Logic
                     const top = gy - stepSize / 2;
                     const right = gx + stepSize / 2;
-
                     ctx.moveTo(right - boxSize, top);
                     ctx.stroke();
-
-                    // Label P
                     ctx.fillStyle = "#666";
-                    ctx.font = `${boxSize * 0.7}px monospace`;
+                    ctx.font = `${boxSize * 0.8}px monospace`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     ctx.fillText("P", right - (boxSize/2), top + (boxSize/2));
@@ -520,11 +515,10 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
             }
 
             // 3. DRAW BACKGROUND NUMBER
-            // Only draw if not currently highlighted in yellow
-            const isHighlighted = activePs.includes(i);
-            if (stepSize > 30 && !isHighlighted) {
-                ctx.fillStyle = "#444"; 
+            // UPDATED: No more exclusion! This draws the grey "11" for you.
+            if (stepSize > 30) {
                 ctx.font = `${stepSize * 0.3}px monospace`;
+                ctx.fillStyle = "#444"; 
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(i.toString(), gx, gy);
@@ -538,58 +532,62 @@ function drawBackgroundGrid(cfg, coordFn, typeTag) {
 function drawMarkersAndLines(cfg, coordFn, typeTag) {
     const { ctx, stepSize, p, Mnum, factors, canvas, centerX, centerY, isMnumPrime } = cfg;
 
-    const drawLine = (targetN, color) => {
-        // Check the toggle inside the line helper specifically
-        if (document.getElementById('showLines') && !document.getElementById('showLines').checked) {
-            return; 
-        }
+    const drawLine = (startN, endN, color, alpha = 0.4) => {
+        if (document.getElementById('showLines') && !document.getElementById('showLines').checked) return;
 
         ctx.save();
         ctx.beginPath();
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.4;
+        ctx.globalAlpha = alpha;
         ctx.lineWidth = 2;
 
-        const endPos = coordFn(targetN);
-        
-        if (typeTag === "mod12") {
-            ctx.moveTo(centerX, centerY); 
-        } else {
-            const startPos = coordFn(1n);
-            ctx.moveTo(centerX + Number(startPos.x) * stepSize, centerY + Number(startPos.y) * stepSize);
-        }
+        // Inside drawMarkersAndLines -> drawLine helper
+        const startPos = (typeTag === "nPolygon") ? getPolygonCoords(BigInt(startN)) : coordFn(BigInt(startN));
+        const endPos = (typeTag === "nPolygon") ? getPolygonCoords(BigInt(endN)) : coordFn(BigInt(endN));
 
+        // Ensure the line starts at the calculated center point
+        ctx.moveTo(centerX + Number(startPos.x) * stepSize, centerY + Number(startPos.y) * stepSize);
         ctx.lineTo(centerX + Number(endPos.x) * stepSize, centerY + Number(endPos.y) * stepSize);
+        
         ctx.stroke();
         ctx.restore();
     };
 
-    // Determine colors based on the primality flag passed from plotData
-    const mnumColor = isMnumPrime ? "#e74c3c" : "#3498db";
-    const mnumLabel = isMnumPrime ? `M# (Prime)` : `M# (Comp)`;
+    // --- 1. SEQUENTIAL TRACKING LINES ---
+    // Sort factors numerically to ensure the path goes 1 -> small factor -> large factor
+    const sortedFactors = [...factors].sort((a, b) => (a < b ? -1 : 1));
 
-    // Draw tracker lines
-    drawLine(p, "#ffff00");
-    factors.forEach(f => {
-        if (typeof f === 'bigint') drawLine(f, "#00ff88");
+    let lastN = 1n; // Start the chain at 1
+
+    // Connect 1 -> Factor1 -> Factor2 -> ...
+    sortedFactors.forEach(f => {
+        if (typeof f === 'bigint') {
+            drawLine(lastN, f, "#00ff88", 0.5); // Green for factor connections
+            lastN = f;
+        }
     });
-    drawLine(Mnum, mnumColor);
 
-    // --- 3. DRAW MARKERS ---
-    if (typeTag !== "mod12") {
-        plotMarker(cfg, 1n, "#ffffff", "1", 12, coordFn, typeTag); 
-    }    
-    // Draw the main calculated number
-    plotMarker(cfg, Mnum, mnumColor, mnumLabel, 10, coordFn, typeTag);
-    plotMarker(cfg, p, "#ffff00", `p(${p})`, 8, coordFn, typeTag); 
+    // Connect the last factor (or 1 if prime) to the Main Number
+    const mnumColor = isMnumPrime ? "#e74c3c" : "#3498db";
+    drawLine(lastN, Mnum, mnumColor, 0.6);
 
-    // Draw factors only if they are actual numbers (BigInts)
+    // --- 2. DRAW MARKERS ---
+    // Plot origin
+    plotMarker(cfg, 1n, "#ffffff", "1", 12, coordFn, typeTag);     
+    
+    // Plot factors
     factors.forEach(f => {
         if (typeof f === 'bigint') {
             plotMarker(cfg, f, "#00ff88", f.toString(), 6, coordFn, typeTag);
         }
     });
+
+    // Plot Main Number
+    plotMarker(cfg, Mnum, mnumColor, isMnumPrime ? "M# (Prime)" : "M# (Comp)", 10, coordFn, typeTag);
+
+    // Plot Power p (Grey/Borderless)
+    plotMarker(cfg, p, "#333", `p(${p})`, 8, coordFn, typeTag, false, true);
 }
 
 /** * MISSING HELPER: Draws the grid background for non-radial plots 
@@ -670,18 +668,14 @@ function drawHexagonPlot(cfg) {
         }
     }
     ctx.restore();
-    
-    // Draw markers (1, p, factors) on top
-    drawCommonElements(cfg, getHexCoords, "hexagon");
 }
 
-function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false) {
+function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false, isPower = false) {
     const { ctx, stepSize, centerX, centerY, canvas } = cfg;
-    const isExponent = label.startsWith("p(");
     const isFactor = color === "#00ff88"; 
-    const isPower = color === "#ffff00" || isExponent;
+    
     const nBI = BigInt(n);
-    const pos = (type === "mod12") ? getMod12Coords(nBI) : coordFn(nBI);
+    const pos = (type === "nPolygon") ? getPolygonCoords(nBI) : coordFn(nBI);
     
     const tx = centerX + Number(pos.x) * stepSize;
     const ty = centerY + Number(pos.y) * stepSize;
@@ -696,34 +690,26 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
         markerHitBoxes.push({ n: nBI, x: tx, y: ty, size: Math.max(stepSize, 20), coordFn: coordFn });
 
         // --- 1. GEOMETRY DRAWING (Cells/Borders) ---
-        if (type === "mod12") {
-            const innerR = (pos.ring - 1) * stepSize;
-            const outerR = pos.ring * stepSize;
-            const startAngle = pos.angle - (15 * Math.PI / 180);
-            const endAngle = pos.angle + (15 * Math.PI / 180);
-
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, outerR, startAngle, endAngle);
-            ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true);
-            ctx.closePath();
-
-            // Rule: Only stroke if it's NOT a factor and NOT a power
-            if (!isFactor && !isPower) {
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 3;
+        // Constraint: Do not highlight/border factors OR powers
+        if (!isFactor && !isPower) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            if (type === "nPolygon") {
+                const mNum = Number(document.getElementById('nValue').value) || 12;
+                const angleHalfWidth = (180 / mNum) * (Math.PI / 180);
+                const innerR = (pos.ring - 1) * stepSize;
+                const outerR = pos.ring * stepSize;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerR, pos.angle - angleHalfWidth, pos.angle + angleHalfWidth);
+                ctx.arc(centerX, centerY, innerR, pos.angle + angleHalfWidth, pos.angle - angleHalfWidth, true);
+                ctx.closePath();
                 ctx.stroke();
-            }
-        } else {
-            // Standard Grid / Hexagon logic
-            if (!isFactor && !isPower) {
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 3;
-                if (type === "hexagon") {
-                    drawHexPath(ctx, tx, ty, stepSize);
-                    ctx.stroke();
-                } else {
-                    ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
-                }
+            } else if (type === "hexagon") {
+                drawHexPath(ctx, tx, ty, stepSize);
+                ctx.stroke();
+            } else {
+                ctx.strokeRect(tx - stepSize / 2, ty - stepSize / 2, stepSize, stepSize);
             }
         }
 
@@ -732,74 +718,70 @@ function plotMarker(cfg, n, color, label, size, coordFn, type, isOrigin = false)
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
-            // --- Inside plotMarker function, under TEXT & INDICATORS ---
-
             if (isFactor) {
                 const fontSize = stepSize * 0.2;
                 ctx.font = `${fontSize}px monospace`;
                 ctx.fillStyle = "#00ff88";
 
-                if (type === "mod12") {
-                    // ... (Keep your working Mod12 logic here)
+                if (type === "nPolygon") {
                     const fAngle = pos.angle - (8 * Math.PI / 180);
                     const fRadius = (pos.ring - 0.7) * stepSize;
                     const fx = centerX + fRadius * Math.cos(fAngle);
                     const fy = centerY + fRadius * Math.sin(fAngle);
                     ctx.fillText("F", fx, fy);
                 } else if (type === "hexagon") {
-                    // --- FIXED HEXAGON LOGIC ---
-                    // P is at -30 deg (330). Opposite is 150 deg (5*PI/6)
+                    // EXACT OPPOSITE OF P:
+                    // P is at -Math.PI / 6. Opposite is -Math.PI / 6 + Math.PI = 5 * Math.PI / 6
+                    const boxSize = stepSize * 0.25;
                     const oppositeAngle = 5 * Math.PI / 6; 
                     
-                    // Calculate the vertex position at 150 degrees
+                    // Calculate the corner vertex position
                     const vx = tx + stepSize * Math.cos(oppositeAngle);
                     const vy = ty + stepSize * Math.sin(oppositeAngle);
                     
-                    // Offset "F" inward toward the center of the hexagon, 
-                    // mirroring the P-label's inward offset
-                    const offsetX = (stepSize * 0.2) * Math.cos(oppositeAngle + Math.PI);
-                    const offsetY = (stepSize * 0.2) * Math.sin(oppositeAngle + Math.PI);
-                    
-                    ctx.fillText("F", vx + offsetX, vy + offsetY);
+                    // Offset the text inward from the corner exactly like P
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("F", vx + boxSize * 0.7, vy - boxSize * 0.3);
                 } else {
-                    // Standard Square Logic (Bottom-Left is opposite Top-Right)
                     const bottom = ty + stepSize / 2;
                     const left = tx - stepSize / 2;
                     ctx.fillText("F", left + (stepSize * 0.15), bottom - (stepSize * 0.15));
                 }
             }
 
-            // Main Number Rendering
-            ctx.font = `${stepSize * 0.3}px monospace`;
-            if (isPower) {
-                ctx.fillStyle = "#ffff00"; // Power highlight
-            } else {
-                ctx.fillStyle = "#ffffff"; // Standard white for primes/composites
+            // --- MAIN NUMBER RENDERING ---
+            if (!isPower){
+                ctx.font = `${stepSize * 0.30}px monospace`;
+                ctx.fillStyle = "#ffffff"; 
+                ctx.fillText(n.toString(), tx, ty);
             }
-            ctx.fillText(n.toString(), tx, ty);
         }
 
     } else {
         // --- OFF-SCREEN TRACKING ---
-        const time = performance.now() / 500;
-        const edgeX = Math.max(margin, Math.min(canvas.width - margin, tx));
-        const edgeY = Math.max(margin, Math.min(canvas.height - margin, ty));
-        
-        markerHitBoxes.push({ n: nBI, x: edgeX, y: edgeY, size: 20, coordFn: coordFn });
+        // We skip pulses for the power 'p' to keep the UI clean as per logic
+        if (!isPower) {
+            const time = performance.now() / 500;
+            const edgeX = Math.max(margin, Math.min(canvas.width - margin, tx));
+            const edgeY = Math.max(margin, Math.min(canvas.height - margin, ty));
+            
+            markerHitBoxes.push({ n: nBI, x: edgeX, y: edgeY, size: 20, coordFn: coordFn });
 
-        const pulse = (Math.sin(time * 2) + 1) / 2;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(edgeX, edgeY, 10 + (pulse * 15), 0, Math.PI * 2);
-        ctx.globalAlpha = 1 - pulse;
-        ctx.stroke();
-        
-        ctx.globalAlpha = 1.0;
-        ctx.fillStyle = color;
-        ctx.beginPath(); 
-        ctx.arc(edgeX, edgeY, 8, 0, Math.PI * 2); 
-        ctx.fill();
+            const pulse = (Math.sin(time * 2) + 1) / 2;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(edgeX, edgeY, 10 + (pulse * 15), 0, Math.PI * 2);
+            ctx.globalAlpha = 1 - pulse;
+            ctx.stroke();
+            
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = color;
+            ctx.beginPath(); 
+            ctx.arc(edgeX, edgeY, 8, 0, Math.PI * 2); 
+            ctx.fill();
+        }
     }
     ctx.restore();
 }
@@ -819,8 +801,6 @@ function jumpToNumber(nBI, type, refP) {
     const pos = coordFn(nBI);
     
     // 3. Center the camera: (Middle of Screen) - (Target World Pos * Scale)
-    // We do NOT subtract half a stepSize here because the markers 
-    // and grid text are already centered on the coordinate point.
     offsetX = (canvas.width / 2) - (Number(pos.x) * finalStep);
     offsetY = (canvas.height / 2) - (Number(pos.y) * finalStep);
 
@@ -844,67 +824,112 @@ function updateStats(type, allFoundEntries) {
 
         // Helper to handle geometric labels for custom or standard formulas
         const getGeomData = (nBI, index = -1) => {
-    const pos = getCoordFnByType(type)(nBI);
-    const toBI = (val) => typeof val === 'bigint' ? val : BigInt(Math.floor(val));
+            const pos = getCoordFnByType(type)(nBI);
+            const toBI = (val) => typeof val === 'bigint' ? val : BigInt(Math.floor(val));
 
-    // --- CUSTOM FORMULA FORMATTING ---
-    if (formulaType === "custom") {
-        let label = "";
-        switch (type) {
-            case "binary":
-                // Row + 1, Offset - 1
-                const bRow = toBI(pos.y) + 1n;
-                const bOff = toBI(pos.x);
-                label = `Bits ${bRow}, Offset ${bOff}`;
-                break;
+            // Get N from the UI for the polygon calculations
+            const nPolygonValue = BigInt(document.getElementById('nValue')?.value || 12);
 
-            case "ulam":
-            case "hexagon":
-                // Shell logic + 1
-                let shellVal;
-                if (type === "hexagon") {
-                    shellVal = Math.ceil((3 + Math.sqrt(9 - 12 * (1 - Number(nBI)))) / 6);
-                } else {
-                    // Ulam/Spiral shell calculation + 1
-                    shellVal = (bigIntSqrt(nBI - 1n) + 1n) / 2n + 1n;
+            // 1. DYNAMIC CALCULATION FOR POLYGON (Works for both Custom and Standard)
+            if (type === "nPolygon") {
+                const ring = (nBI - 1n) / nPolygonValue + 1n; // The "iteration" or shell
+                const modVal = nBI % nPolygonValue === 0n ? nPolygonValue : nBI % nPolygonValue;
+                const sumBase = (ring - 1n) * nPolygonValue;
+                
+                return `<span style="color: #bbb;">Ring ${ring}, Sum: ${sumBase} + ${modVal} (Mod ${nPolygonValue})</span>`;
+            }
+            
+            // --- CUSTOM FORMULA FORMATTING ---
+            if (formulaType === "custom") {
+                let label = "";
+                let shellVal, offsetVal, shellEnd;
+
+                switch (type) {
+                    case "binary":
+                        const bRow = toBI(pos.y) + 1n;
+                        const bOff = toBI(pos.x);
+                        const bitBase = nBI-bOff;
+                        label = `Bits ${bRow}, Sum: ${bitBase} + ${bOff}`;
+                        break;
+
+                    case "ulam":
+                        shellVal = (bigIntSqrt(nBI - 1n) + 1n) / 2n + 1n;
+                        if (shellVal <= 1n) {
+                            shellEnd = 0n;
+                            offsetVal = nBI; 
+                        } else {
+                            let prevInnerEdge = (2n * shellVal - 3n);
+                            shellEnd = prevInnerEdge * prevInnerEdge;
+                            offsetVal = nBI - shellEnd;
+                        }
+                        label = `Layer ${shellVal}, Sum: ${shellEnd} + ${offsetVal}`;
+                        break;
+
+                    case "hexagon":
+                        shellVal = BigInt(Math.ceil((3 + Math.sqrt(9 - 12 * (1 - Number(nBI)))) / 6));
+                        if (shellVal <= 1n) {
+                            shellEnd = 0n;
+                            offsetVal = nBI;
+                        } else {
+                            let s = shellVal - 1n;
+                            shellEnd = (3n * s * s - 3n * s + 1n);
+                            offsetVal = nBI - shellEnd;
+                        }
+                        label = `Layer ${shellVal}, Sum: ${shellEnd} + ${offsetVal}`;
+                        break;
+
+                    case "shell":
+                    case "serpentine":
+                        label = `Row ${toBI(pos.y) + 1n}, Col ${toBI(pos.x) + 1n}`;
+                        break;
+                    case "nPolygon":
+                        const mInput = Number(document.getElementById('nValue').value) || 12;
+                        const mPos = getPolygonCoords(nBI);
+                        label = `Ring ${mPos.ring}, Pos ${mPos.modVal} (Mod ${mInput})`;
+                        break;
+
+                    default:
+                        label = `X: ${toBI(pos.x) + 1n}, Y: ${toBI(pos.y) + 1n}`;
                 }
-                label = `Shell ${shellVal}`;
-                break;
+                return `<span style="color: #bbb;">${label}</span>`;
+            }
 
-            case "shell":
-            case "serpentine":
-                // Grid-based: Row + 1, Col + 1
-                label = `Row ${toBI(pos.y) + 1n}, Col ${toBI(pos.x) + 1n}`;
-                break;
-
-            default:
-                label = `X: ${toBI(pos.x) + 1n}, Y: ${toBI(pos.y) + 1n}`;
-        }
-        return `<span style="color: #bbb;">${label}</span>`;
-    }
-
+            // --- STANDARD DATABASE FORMATTING ---
             let labelText = "";
             try {
                 switch (type) {
                     case "binary": 
-                        labelText = index === -1 ? `Bits ${entry.binaryBitlen}, Offset ${entry.binaryOffset}` : `Bits ${entry.factorBinaryBitlen[index]}, Offset ${entry.factorBinaryOffset[index]}`; 
+                        labelText = index === -1 
+                            ? `Bits ${entry.binaryBitlen}, Sum: ${entry.binarySumBase} + ${entry.binarySumOffset}` 
+                            : `Bits ${entry.factorBinaryBitlen[index]}, Sum: ${entry.factorBinarySumBase[index]} + ${entry.factorBinarySumOffset[index]}`; 
                         break;
                     case "ulam": 
-                        labelText = index === -1 ? `Shell ${entry.ulamShell}` : `Shell ${entry.factorUlamShell[index]}`; 
-                        break;
-                    case "serpentine": 
-                        labelText = index === -1 ? `Row ${entry.serpentineRow}, Col ${entry.serpentineColumn}` : `Row ${entry.factorSerpentineRow[index]}, Col ${entry.factorSerpentineColumn[index]}`; 
-                        break;
-                    case "shell": 
-                        labelText = index === -1 ? `Row ${entry.squareRow}, Col ${entry.squareCol}` : `Row ${entry.factorSquareRow[index]}, Col ${entry.factorSquareCol[index]}`; 
+                        labelText = index === -1 
+                            ? `Layer ${entry.ulamShell}, Sum: ${entry.ulamSumBase} + ${entry.ulamSumOffset}` 
+                            : `Layer ${entry.factorUlamShell[index]}, Sum: ${entry.factorUlamSumBase[index]} + ${entry.factorUlamSumOffset[index]}`; 
                         break;
                     case "hexagon": 
-                        labelText = index === -1 ? `Shell ${entry.hexagonShell}` : `Shell ${entry.factorHexagonShell[index]}`; 
+                        labelText = index === -1 
+                            ? `Layer ${entry.hexagonShell}, Sum: ${entry.hexagonSumBase} + ${entry.hexagonSumOffset}` 
+                            : `Layer ${entry.factorHexagonShell[index]}, Sum: ${entry.factorHexagonSumBase[index]} + ${entry.factorHexagonSumOffset[index]}`; 
+                        break; 
+                    case "serpentine": 
+                        labelText = index === -1 
+                            ? `Row ${entry.serpentineRow}, Col ${entry.serpentineColumn}` 
+                            : `Row ${entry.factorSerpentineRow[index]}, Col ${entry.factorSerpentineColumn[index]}`; 
+                        break;
+                    case "shell": 
+                        labelText = index === -1 
+                            ? `Row ${entry.squareRow}, Col ${entry.squareCol}` 
+                            : `Row ${entry.factorSquareRow[index]}, Col ${entry.factorSquareCol[index]}`; 
                         break;
                 }
-            } catch(e) { labelText = "N/A"; }
-            return `<span style="color: #bbb;">${labelText}</span>`;
-        };
+            } catch(e) { labelText = "N/A"; 
+        }
+        // Final check to prevent "undefined" strings in UI
+        if (labelText.includes("undefined")) labelText = labelText.replace(/undefined/g, "0");
+        return `<span style="color: #bbb;">${labelText}</span>`;
+    };
 
         // Header for each sequence
         html += `<div style="color: #ffff00; margin-top: 10px; border-bottom: 1px solid #333; padding-bottom: 2px;">SEQUENCE: ${entry.form}</div>`;
