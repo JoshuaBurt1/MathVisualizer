@@ -1,5 +1,5 @@
 # MathVisualizer
 
-Visualize math using grids
+Visualize natural number sets with factor grids and polar grids.
 
 https://mathvisualizer-awga.onrender.com/
